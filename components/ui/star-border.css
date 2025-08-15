@@ -1,0 +1,46 @@
+.star-border-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.border-gradient-bottom,
+.border-gradient-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  opacity: 0.7;
+}
+
+.border-gradient-bottom {
+  bottom: 0;
+  animation: borderBottomAnimation linear infinite;
+}
+
+.border-gradient-top {
+  top: 0;
+  animation: borderTopAnimation linear infinite;
+}
+
+.inner-content {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes borderBottomAnimation {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes borderTopAnimation {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
