@@ -1,5 +1,6 @@
+//app\api\listings\route.ts
 import { NextResponse } from 'next/server'
-import FoodListing from '@/lib/models/FoodListing'
+import FoodListing, { FoodType } from '@/lib/models/FoodListing'
 import connectDB from '@/lib/db'
 import { uploadImages } from '@/lib/cloudinary'
 import mongoose from 'mongoose'
@@ -105,7 +106,6 @@ export async function POST(req: Request) {
     const token = authHeader.split(' ')[1]
     const decoded = verifyToken(token)
     
-    // Check if token is valid
     if (!decoded) {
       return NextResponse.json(
         { error: 'Invalid or expired token' },
@@ -113,7 +113,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Check user role
     if (decoded.role !== 'donor') {
       return NextResponse.json(
         { error: 'Only donors can create listings' },
@@ -121,20 +120,25 @@ export async function POST(req: Request) {
       )
     }
 
-    // Process form data
     const formData = await req.formData()
-    const data = Object.fromEntries(formData.entries())
+    
+    // Extract text fields
+    const title = formData.get('title') as string
+    const types = formData.get('types') as string
+    const quantity = formData.get('quantity') as string
+    const availableFrom = formData.get('availableFrom') as string
+    const availableUntil = formData.get('availableUntil') as string
+    const location = formData.get('location') as string
+    const instructions = formData.get('instructions') as string || ''
+    const unit = formData.get('unit') as string || 'meals'
+    const freshness = formData.get('freshness') as string || 'fresh-hot'
+    const allowPartial = formData.get('allowPartial') as string === 'true'
+    const requireInsulated = formData.get('requireInsulated') as string === 'true'
 
-    // Sanitize HTML content
-    const sanitizedInstructions = sanitizeHtml(data.instructions as string)
-    
     // Validate required fields
-    const requiredFields = ['title', 'types', 'quantity', 'availableFrom', 'availableUntil', 'location']
-    const missingFields = requiredFields.filter(field => !data[field])
-    
-    if (missingFields.length > 0) {
+    if (!title || !types || !quantity || !availableFrom || !availableUntil || !location) {
       return NextResponse.json(
-        { error: `Missing required fields: ${missingFields.join(', ')}` },
+        { error: 'Missing required fields' },
         { status: 400 }
       )
     }
@@ -143,7 +147,7 @@ export async function POST(req: Request) {
     const images: string[] = []
     const files = formData.getAll('photos') as File[]
     
-    if (files.length > 0) {
+    if (files && files.length > 0 && files[0].size > 0) {
       try {
         const uploadResults = await uploadImages(files)
         images.push(...uploadResults.map(result => result.url))
@@ -156,19 +160,33 @@ export async function POST(req: Request) {
       }
     }
 
+    // Parse JSON fields
+    let parsedTypes: FoodType[];
+    let parsedLocation: Location;
+    
+    try {
+      parsedTypes = JSON.parse(types) as FoodType[];
+      parsedLocation = JSON.parse(location) as Location;
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Invalid data format for types or location' },
+        { status: 400 }
+      )
+    }
+
     // Create new listing
     const listing = new FoodListing({
-      title: data.title as string,
-      types: JSON.parse(data.types as string),
-      quantity: Number(data.quantity),
-      unit: data.unit as string || 'meals',
-      freshness: data.freshness as string || 'fresh-hot',
-      availableFrom: new Date(data.availableFrom as string),
-      availableUntil: new Date(data.availableUntil as string),
-      location: data.location as string,
-      instructions: sanitizedInstructions,
-      allowPartial: data.allowPartial === 'true',
-      requireInsulated: data.requireInsulated === 'true',
+      title,
+      types: parsedTypes,
+      quantity: Number(quantity),
+      unit,
+      freshness,
+      availableFrom: new Date(availableFrom),
+      availableUntil: new Date(availableUntil),
+      location: parsedLocation,
+      instructions: sanitizeHtml(instructions),
+      allowPartial,
+      requireInsulated,
       images,
       status: 'published',
       createdBy: new mongoose.Types.ObjectId(decoded.userId),
