@@ -73,7 +73,27 @@ const FoodListingSchema = new Schema<IFoodListing>(
     freshness: { type: String, required: true, enum: ['fresh-hot', 'fresh-chilled', 'frozen', 'room-temp', 'packaged'] },
     availableFrom: { type: Date, required: true },
     availableUntil: { type: Date, required: true },
-    location: { type: LocationSchema, required: true },
+    location: { 
+      type: {
+        address: { type: String, required: true },
+        coordinates: {
+          lat: { type: Number, required: true },
+          lng: { type: Number, required: true }
+        },
+        geoPoint: {
+          type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+          },
+          coordinates: {
+            type: [Number],
+            required: true
+          }
+        }
+      },
+      required: true 
+    },
     instructions: { type: String },
     allowPartial: { type: Boolean, default: true },
     requireInsulated: { type: Boolean, default: false },
@@ -98,7 +118,7 @@ FoodListingSchema.index({ title: 'text', 'location.address': 'text', instruction
 
 // Pre-save middleware to create GeoJSON point from coordinates
 FoodListingSchema.pre('save', function(next) {
-  if (this.location && this.location.coordinates) {
+  if (this.location?.coordinates) {
     this.location.geoPoint = {
       type: 'Point',
       coordinates: [this.location.coordinates.lng, this.location.coordinates.lat]

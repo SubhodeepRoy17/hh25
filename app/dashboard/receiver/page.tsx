@@ -1,4 +1,3 @@
-// app/dashboard/receiver/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -22,15 +21,13 @@ import {
   Package,
   Star,
   LogOut,
-  ChevronRight,
   Utensils,
   AlertCircle,
-  Timer,
+  Loader2
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import QrScannerModal from "@/components/receiver/qr-scanner-modal"
 import { useToast } from "@/components/ui/use-toast"
-import { FoodType, Freshness, QuantityUnit } from "@/lib/models/FoodListing"
+import { useAuth } from "@/hooks/useAuth"
 
 interface FoodListing {
   _id: string
@@ -41,9 +38,9 @@ interface FoodListing {
   }
   distance: number
   quantity: number
-  unit: QuantityUnit
-  types: FoodType[]
-  freshness: Freshness
+  unit: string
+  types: string[]
+  freshness: string
   availableUntil: Date
   location: {
     address: string
@@ -53,9 +50,7 @@ interface FoodListing {
     }
   }
   images: string[]
-  status: 'published' | 'claimed' | 'completed'
   interestedUsers?: number
-  tags?: string[]
   createdAt: Date
 }
 
@@ -70,18 +65,27 @@ interface ImpactStats {
 
 export default function ReceiverDashboardPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const { toast } = useToast()
+  
+  // State for search and filters
   const [searchQuery, setSearchQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
   const [vegOnly, setVegOnly] = useState(false)
   const [maxDistance, setMaxDistance] = useState(5)
-  const [qrScanOpen, setQrScanOpen] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  
+  // State for listings and loading
   const [listings, setListings] = useState<FoodListing[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // State for impact stats
   const [impactStats, setImpactStats] = useState<ImpactStats | null>(null)
+  
+  // State for location and QR scanner
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
-  const { toast } = useToast()
+  const [qrScanOpen, setQrScanOpen] = useState(false)
 
   // Get user's current location
   useEffect(() => {
@@ -94,91 +98,88 @@ export default function ReceiverDashboardPage() {
           })
         },
         (err) => {
-          setLocationError("Unable to retrieve your location. Please enable location services.")
+          setLocationError("Unable to retrieve your location. Showing listings near default location.")
           console.error("Geolocation error:", err)
-          // Default to a central location if geolocation fails
           setUserLocation({ lat: 12.9716, lng: 77.5946 }) // Default to Bangalore coordinates
         }
       )
     } else {
-      setLocationError("Geolocation is not supported by your browser.")
+      setLocationError("Geolocation not supported. Showing listings near default location.")
       setUserLocation({ lat: 12.9716, lng: 77.5946 }) // Default to Bangalore coordinates
     }
   }, [])
 
-  const fetchListings = async () => {
-    if (!userLocation) return
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      const token = localStorage.getItem('authToken')
-      if (!token) {
-        throw new Error('No authentication token found')
-      }
-
-      const params = new URLSearchParams({
-        lat: userLocation.lat.toString(),
-        lng: userLocation.lng.toString(),
-        maxDistance: maxDistance.toString(),
-        vegOnly: vegOnly.toString(),
-        query: searchQuery
-      })
-
-      const response = await fetch(`/api/listings`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setListings(data.listings || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load listings')
-      console.error('Error fetching listings:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // Fetch listings when filters or location change
   useEffect(() => {
-    if (userLocation) {
-      fetchListings()
+    const fetchListings = async () => {
+      if (!userLocation) return
+
+      try {
+        setLoading(true)
+        setError(null)
+
+        const token = localStorage.getItem('authToken')
+        if (!token) {
+          throw new Error('No authentication token found')
+        }
+
+        const params = new URLSearchParams({
+          lat: userLocation.lat.toString(),
+          lng: userLocation.lng.toString(),
+          maxDistance: maxDistance.toString(),
+          vegOnly: vegOnly.toString(),
+          query: searchQuery
+        })
+
+        const response = await fetch(`/api/listings/available?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch listings')
+        }
+
+        const data = await response.json()
+        setListings(data.listings || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load listings')
+        console.error('Error fetching listings:', err)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    // Add debounce to prevent too many requests while typing
+    const debounceTimer = setTimeout(fetchListings, 500)
+    return () => clearTimeout(debounceTimer)
   }, [userLocation, maxDistance, vegOnly, searchQuery])
 
-  const fetchImpactStats = async () => {
-    try {
-      const token = localStorage.getItem('authToken')
-      if (!token) return
-
-      const response = await fetch('/api/receiver/stats', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch impact stats')
-      }
-
-      const data = await response.json()
-      setImpactStats(data)
-    } catch (err) {
-      console.error('Error fetching impact stats:', err)
-    }
-  }
-
+  // Fetch impact stats
   useEffect(() => {
+    const fetchImpactStats = async () => {
+      try {
+        const token = localStorage.getItem('authToken')
+        if (!token) return
+
+        const response = await fetch('/api/receiver/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch impact stats')
+        }
+
+        const data = await response.json()
+        setImpactStats(data)
+      } catch (err) {
+        console.error('Error fetching impact stats:', err)
+      }
+    }
+
     fetchImpactStats()
   }, [])
 
@@ -192,23 +193,39 @@ export default function ReceiverDashboardPage() {
       const response = await fetch(`/api/listings/${listingId}/claim`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Failed to claim listing`)
+        throw new Error('Failed to claim listing')
       }
 
       toast({
         title: "Success",
-        description: "Food claimed successfully! Check your notifications for pickup details.",
+        description: "Food claimed successfully! Check notifications for details.",
         variant: "success"
       })
 
-      await fetchListings()
+      // Refresh listings after claim
+      const params = new URLSearchParams({
+        lat: userLocation?.lat.toString() || '0',
+        lng: userLocation?.lng.toString() || '0',
+        maxDistance: maxDistance.toString(),
+        vegOnly: vegOnly.toString(),
+        query: searchQuery
+      })
+
+      const listingsResponse = await fetch(`/api/listings/available?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (listingsResponse.ok) {
+        const data = await listingsResponse.json()
+        setListings(data.listings || [])
+      }
     } catch (err) {
       toast({
         title: "Error",
@@ -222,8 +239,8 @@ export default function ReceiverDashboardPage() {
     setQrScanOpen(true)
   }
 
-  const getFoodTypeBadge = (type: FoodType) => {
-    const typeMap = {
+  const getFoodTypeBadge = (type: string) => {
+    const typeMap: Record<string, { label: string, color: string }> = {
       cooked: { label: 'Cooked', color: 'bg-orange-500/20 text-orange-300 border-orange-500/30' },
       produce: { label: 'Produce', color: 'bg-green-500/20 text-green-300 border-green-500/30' },
       bakery: { label: 'Bakery', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
@@ -233,6 +250,7 @@ export default function ReceiverDashboardPage() {
       vegetarian: { label: 'Vegetarian', color: 'bg-green-500/20 text-green-300 border-green-500/30' },
       vegan: { label: 'Vegan', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
     }
+    
     return (
       <Badge className={`text-xs ${typeMap[type]?.color || 'bg-gray-500/20 text-gray-300 border-gray-500/30'}`}>
         {typeMap[type]?.label || type}
@@ -245,7 +263,7 @@ export default function ReceiverDashboardPage() {
       <main className="min-h-screen bg-black text-white">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-pulse text-gray-400">Loading food listings...</div>
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
           </div>
         </div>
       </main>
@@ -260,7 +278,7 @@ export default function ReceiverDashboardPage() {
             <AlertCircle className="h-5 w-5 inline mr-2" />
             {error}
             <Button
-              onClick={fetchListings}
+              onClick={() => window.location.reload()}
               className="mt-2 bg-transparent border-red-500/40 text-red-100 hover:bg-red-500/10"
               size="sm"
             >
@@ -301,9 +319,9 @@ export default function ReceiverDashboardPage() {
             </Button>
             <Button
               onClick={() => {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('userData');
-                router.push('/auth/login');
+                localStorage.removeItem('authToken')
+                localStorage.removeItem('userData')
+                router.push('/auth/login')
               }}
               variant="outline"
               size="sm"
@@ -317,7 +335,7 @@ export default function ReceiverDashboardPage() {
         {locationError && (
           <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3 mb-6 text-yellow-200">
             <AlertCircle className="h-5 w-5 inline mr-2" />
-            {locationError} Showing listings within {maxDistance}km of default location.
+            {locationError}
           </div>
         )}
 
@@ -331,7 +349,7 @@ export default function ReceiverDashboardPage() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="Search food listings..."
+                      placeholder="Search by food, donor, or location..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10"
@@ -362,11 +380,15 @@ export default function ReceiverDashboardPage() {
                       <input
                         type="range"
                         min="1"
-                        max="10"
+                        max="20"
                         value={maxDistance}
                         onChange={(e) => setMaxDistance(Number(e.target.value))}
                         className="w-full mt-2 accent-emerald-500"
                       />
+                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>1km</span>
+                        <span>20km</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -396,14 +418,6 @@ export default function ReceiverDashboardPage() {
                           <p className="text-emerald-300 text-sm font-medium mb-2">{listing.donor.name}</p>
                           <div className="flex flex-wrap gap-2 mb-3">
                             {listing.types.map((type) => getFoodTypeBadge(type))}
-                            {listing.tags?.map((tag) => (
-                              <Badge
-                                key={tag}
-                                className="bg-emerald-500/20 text-emerald-100 border-emerald-500/30 text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
                           </div>
                         </div>
                         <div className="text-right">
@@ -420,7 +434,7 @@ export default function ReceiverDashboardPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-emerald-300" />
-                          <span>Until {new Date(listing.availableUntil).toLocaleTimeString()}</span>
+                          <span>Until {new Date(listing.availableUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-emerald-300" />
@@ -440,7 +454,11 @@ export default function ReceiverDashboardPage() {
                         >
                           Claim Food
                         </Button>
-                        <Button variant="outline" className="border-emerald-500/40 bg-transparent text-emerald-100">
+                        <Button 
+                          variant="outline" 
+                          className="border-emerald-500/40 bg-transparent text-emerald-100"
+                          onClick={() => router.push(`/listings/${listing._id}`)}
+                        >
                           View Details
                         </Button>
                       </div>
