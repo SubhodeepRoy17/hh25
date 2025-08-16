@@ -75,7 +75,8 @@ export async function GET(req: Request) {
             maxDistance: maxDistance * 1000, // meters
             spherical: true,
             query: matchConditions,
-            key: "location.geoPoint" // Explicitly specify the indexed field
+            key: "location.geoPoint",
+            distanceMultiplier: 0.001 // Explicitly specify the indexed field
         }
       },
       {
