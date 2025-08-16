@@ -58,20 +58,22 @@ function ListingFoodPageContent() {
   // Fetch location suggestions from OpenStreetMap Nominatim API
   const fetchLocationSuggestions = async (query: string) => {
     if (query.length < 3) {
-      setLocationSuggestions([])
-      return
+      setLocationSuggestions([]);
+      return;
     }
 
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`
-      )
-      const data = await response.json()
-      setLocationSuggestions(data)
+      const response = await fetch(`/api/nominatim?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions');
+      }
+      const data = await response.json();
+      setLocationSuggestions(data);
     } catch (error) {
-      console.error("Error fetching location suggestions:", error)
+      console.error("Error fetching location suggestions:", error);
+      // Optionally show user-friendly error message
     }
-  }
+  };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
