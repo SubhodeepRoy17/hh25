@@ -1,11 +1,13 @@
-// ./context/NotificationsContext.tsx
+// context/NotificationsContext.tsx
 "use client"
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
 import { useAuth } from "./AuthContext"
 import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
+import { ToastAction } from "@radix-ui/react-toast"
 
-export type NotificationType = "pickup" | "expiring" | "completed"
+export type NotificationType = "pickup" | "expiring" | "completed" | "new_listing" | "claim"
 
 export interface Notification {
   _id: string
@@ -15,6 +17,7 @@ export interface Notification {
   message: string
   urgent: boolean
   read: boolean
+  metadata?: Record<string, any>
   createdAt: string | Date
 }
 
@@ -26,6 +29,7 @@ interface NotificationsContextType {
   markAsRead: (id: string) => Promise<void>
   fetchNotifications: () => Promise<void>
   markAllAsRead: () => Promise<void>
+  sendNotification: (notification: Omit<Notification, '_id' | 'createdAt' | 'read'>) => Promise<void>
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined)
@@ -37,17 +41,18 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const { toast } = useToast()
+  const router = useRouter()
   const eventSourceRef = useRef<EventSource | null>(null)
 
   const setupPushNotifications = useCallback(async () => {
-    if (!('serviceWorker' in navigator) || !user) return;
+    if (!('serviceWorker' in navigator) || !user) return
 
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
-      const subscription = await reg.pushManager.subscribe({
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY
-      });
+      })
 
       await fetch('/api/push/subscribe', {
         method: 'POST',
@@ -56,11 +61,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify(subscription)
-      });
+      })
     } catch (error) {
-      console.error('Push registration failed:', error);
+      console.error('Push registration failed:', error)
     }
-  }, [user]);
+  }, [user])
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return
@@ -88,13 +93,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       setLoading(false)
     }
   }, [user])
-
-  useEffect(() => {
-    if (user) {
-      setupPushNotifications();
-      setupEventSource(); // Your existing SSE setup
-    }
-  }, [user, setupPushNotifications]);
 
   const markAsRead = useCallback(async (id: string) => {
     try {
@@ -140,6 +138,27 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [])
 
+  const sendNotification = useCallback(async (notification: Omit<Notification, '_id' | 'createdAt' | 'read'>) => {
+    try {
+      const token = localStorage.getItem('authToken')
+      const response = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(notification)
+      })
+      
+      if (!response.ok) throw new Error('Failed to send notification')
+      
+      return await response.json()
+    } catch (error) {
+      console.error('Error sending notification:', error)
+      throw error
+    }
+  }, [])
+
   const setupEventSource = useCallback(() => {
     if (!user) return
 
@@ -151,7 +170,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       eventSourceRef.current.close()
     }
 
-    // URL encode the token for safety
     const encodedToken = encodeURIComponent(token)
     const eventSource = new EventSource(`/api/notifications/stream?token=${encodedToken}`)
     eventSourceRef.current = eventSource
@@ -162,17 +180,29 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         
         if (data.type === 'INITIAL') {
           setNotifications(prev => [...data.notifications, ...prev])
-          setUnreadCount(prev => prev + data.notifications.length)
+          setUnreadCount(prev => prev + data.notifications.filter((n: Notification) => !n.read).length)
         } 
         else if (data.type === 'NEW_NOTIFICATION') {
-          setNotifications(prev => [data.notification, ...prev])
-          setUnreadCount(prev => prev + 1)
+          const newNotification = data.notification
+          setNotifications(prev => [newNotification, ...prev])
+          setUnreadCount(prev => prev + (newNotification.read ? 0 : 1))
           
-          toast({
-            title: "New Notification",
-            description: data.notification.message,
-            variant: data.notification.urgent ? "destructive" : "default"
-          })
+          // In your notification context where you show the toast:
+          if (newNotification.userId === user?.userId) {
+            toast({
+              title: "New Notification",
+              description: newNotification.message,
+              variant: newNotification.urgent ? "destructive" : "default",
+              action: newNotification.listingId ? (
+                <ToastAction 
+                  altText="View listing" 
+                  onClick={() => router.push(`/listings/${newNotification.listingId}`)}
+                >
+                  View
+                </ToastAction>
+              ) : undefined
+            })
+          }
         }
       } catch (error) {
         console.error('Error processing SSE message:', error)
@@ -181,20 +211,21 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
     eventSource.onerror = (error) => {
       console.error('SSE error:', error)
-      // Only reconnect if it's not a 401 error
-      if (!eventSourceRef.current?.url.includes('token')) {
-        setTimeout(() => setupEventSource(), 5000)
-      }
+      // Reconnect after 5 seconds if connection drops
+      setTimeout(() => setupEventSource(), 5000)
     }
 
     return () => {
-      eventSource.close()
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
     }
-  }, [user, toast])
+  }, [user, toast, router])
 
   useEffect(() => {
     if (user) {
       fetchNotifications()
+      setupPushNotifications()
       setupEventSource()
     }
 
@@ -203,7 +234,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         eventSourceRef.current.close()
       }
     }
-  }, [user, fetchNotifications, setupEventSource])
+  }, [user, fetchNotifications, setupPushNotifications, setupEventSource])
 
   return (
     <NotificationsContext.Provider 
@@ -214,7 +245,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         error,
         markAsRead,
         fetchNotifications,
-        markAllAsRead
+        markAllAsRead,
+        sendNotification
       }}
     >
       {children}

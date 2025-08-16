@@ -1,3 +1,4 @@
+//lib\models\NotificationSubcriptionModel.ts
 import mongoose from 'mongoose'
 
 export interface ISubscription {

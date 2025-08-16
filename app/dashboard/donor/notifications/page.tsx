@@ -1,8 +1,8 @@
-//app/dashboard/donor/notifications/page.tsx
+// app/dashboard/donor/notifications/page.tsx
 "use client"
 
 import { useNotifications } from '@/context/NotificationsContext'
-import { Bell, ChevronLeft, Filter, CheckCircle2, Clock, Users } from 'lucide-react'
+import { Bell, ChevronLeft, Filter, CheckCircle2, Clock, Users, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,12 +11,14 @@ import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { NotificationType } from "@/lib/models/Notification"
 import { useToast } from "@/components/ui/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread" | "urgent">("all")
   const { 
     notifications, 
     unreadCount, 
+    loading,
     markAsRead, 
     fetchNotifications,
     markAllAsRead 
@@ -37,7 +39,6 @@ export default function NotificationsPage() {
     try {
       await markAsRead(id)
     } catch (error) {
-      console.error("Failed to mark notification as read:", error)
       toast({
         title: "Error",
         description: "Failed to mark notification as read",
@@ -55,7 +56,6 @@ export default function NotificationsPage() {
         variant: "default"
       })
     } catch (error) {
-      console.error("Failed to mark all notifications as read:", error)
       toast({
         title: "Error",
         description: "Failed to mark all notifications as read",
@@ -72,16 +72,48 @@ export default function NotificationsPage() {
         return <Clock className="h-5 w-5" />
       case "completed":
         return <CheckCircle2 className="h-5 w-5" />
+      case "new_listing":
+        return <Bell className="h-5 w-5" />
+      case "claim":
+        return <AlertTriangle className="h-5 w-5" />
       default:
         return <Bell className="h-5 w-5" />
     }
   }
 
   const formatDate = (date: string | Date) => {
-    if (typeof date === 'string') {
-      return new Date(date).toLocaleString()
-    }
-    return date.toLocaleString()
+    const d = typeof date === 'string' ? new Date(date) : date
+    return d.toLocaleString()
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Skeleton className="h-10 w-10 rounded-md" />
+          <Skeleton className="h-8 w-48 rounded-md" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+          <div className="space-y-4">
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -179,6 +211,8 @@ export default function NotificationsPage() {
                             notification.type === "pickup" && "bg-emerald-500/20 text-emerald-300",
                             notification.type === "expiring" && "bg-yellow-500/20 text-yellow-300",
                             notification.type === "completed" && "bg-blue-500/20 text-blue-300",
+                            notification.type === "new_listing" && "bg-purple-500/20 text-purple-300",
+                            notification.type === "claim" && "bg-red-500/20 text-red-300"
                           )}
                         >
                           {getNotificationIcon(notification.type)}

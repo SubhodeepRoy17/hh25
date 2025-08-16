@@ -1,3 +1,4 @@
+// app/api/notifications/stream/route.ts
 import { NextResponse } from 'next/server'
 import { verifyTokenForSSE } from '@/lib/auth'
 import connectToDB from '@/lib/db'
@@ -9,7 +10,6 @@ export async function GET(request: Request) {
   try {
     await connectToDB()
     
-    // Get token from query params
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
     
@@ -17,64 +17,63 @@ export async function GET(request: Request) {
       return new NextResponse('Token required', { status: 401 })
     }
 
-    // Verify token specifically for SSE
     const decoded = verifyTokenForSSE(token)
     if (!decoded) {
       return new NextResponse('Invalid token', { status: 401 })
     }
 
-    // Create SSE response
     const stream = new ReadableStream({
       async start(controller) {
-        // Send initial data
+        // Send initial unread notifications
         const initialNotifications = await NotificationModel.find({
           userId: decoded.userId,
           read: false
-        }).sort({ createdAt: -1 }).limit(10).lean()
-
-        const initialData = JSON.stringify({
-          type: 'INITIAL',
-          notifications: initialNotifications
         })
-        controller.enqueue(`data: ${initialData}\n\n`)
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean()
+
+        controller.enqueue(
+          `data: ${JSON.stringify({
+            type: 'INITIAL',
+            notifications: initialNotifications
+          })}\n\n`
+        )
 
         // Watch for new notifications
         const changeStream = NotificationModel.watch(
           [
             {
               $match: {
-                'fullDocument.userId': decoded.userId,
-                operationType: 'insert'
+                $or: [
+                  { 'fullDocument.userId': decoded.userId },
+                  { operationType: 'delete' } // Handle deletions if needed
+                ]
               }
             }
           ],
-          { fullDocument: 'updateLookup' }
+          { 
+            fullDocument: 'updateLookup',
+            batchSize: 1
+          }
         )
 
-        changeStream.on('change', async (change) => {
+        changeStream.on('change', (change) => {
           if (change.operationType === 'insert') {
-            const newNotification = change.fullDocument
-            const data = JSON.stringify({
-              type: 'NEW_NOTIFICATION',
-              notification: newNotification
-            })
-            controller.enqueue(`data: ${data}\n\n`)
+            controller.enqueue(
+              `data: ${JSON.stringify({
+                type: 'NEW_NOTIFICATION',
+                notification: change.fullDocument
+              })}\n\n`
+            )
           }
         })
 
         // Handle client disconnect
-        const handleClose = () => {
+        request.signal.addEventListener('abort', () => {
           changeStream.close()
           controller.close()
-        }
-
-        // Listen for abort event (client disconnect)
-        const abortController = new AbortController()
-        abortController.signal.addEventListener('abort', handleClose)
-
-        return () => {
-          abortController.abort()
-        }
+        })
       }
     })
 
@@ -87,9 +86,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('SSE connection error:', error)
-    if (error instanceof Error && error.message.includes('Token')) {
-      return new NextResponse(error.message, { status: 401 })
-    }
     return new NextResponse('SSE connection failed', { status: 500 })
   }
 }
