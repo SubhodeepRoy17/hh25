@@ -126,7 +126,7 @@ export default function ReceiverDashboardPage() {
         query: searchQuery
       })
 
-      const response = await fetch(`/api/listings/available?${params.toString()}`, {
+      const response = await fetch(`/api/listings`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
