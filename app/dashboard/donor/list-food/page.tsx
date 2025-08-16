@@ -87,13 +87,26 @@ function ListingFoodPageContent() {
   }, [location])
 
   const handleLocationSelect = (suggestion: any) => {
-    setLocation(suggestion.display_name)
+    setLocation(suggestion.display_name);
     setLocationCoords({
       lat: parseFloat(suggestion.lat),
       lng: parseFloat(suggestion.lon)
-    })
-    setShowSuggestions(false)
-  }
+    });
+    setShowSuggestions(false);
+    
+    // Log to verify
+    console.log("Selected location:", {
+      address: suggestion.display_name,
+      coordinates: {
+        lat: parseFloat(suggestion.lat),
+        lng: parseFloat(suggestion.lon)
+      },
+      geoPoint: {
+        type: "Point",
+        coordinates: [parseFloat(suggestion.lon), parseFloat(suggestion.lat)]
+      }
+    });
+  };
 
   const toggleType = (val: FoodType) => {
     setTypes((prev) => (prev.includes(val) ? prev.filter((t) => t !== val) : [...prev, val]))
@@ -141,7 +154,11 @@ function ListingFoodPageContent() {
       formData.append('availableUntil', availableUntil)
       formData.append('location', JSON.stringify({
         address: location,
-        coordinates: locationCoords
+        coordinates: locationCoords,
+        geoPoint: {  // Add this
+          type: "Point",
+          coordinates: [locationCoords.lng, locationCoords.lat]  // Note: [lng, lat]
+        }
       }))
       formData.append('instructions', instructions)
       formData.append('allowPartial', allowPartial.toString())
