@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Package,
+  LogOut,
   ChevronLeft, ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -226,6 +227,18 @@ export default function DashboardPage() {
                 </Button>
               </Link>
             )}
+            <Button
+              onClick={() => {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userData');
+                router.push('/auth/login');
+              }}
+              variant="outline"
+              className="border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300"
+            >
+              <LogOut className="h-5 w-5 mr-2" />
+              Logout
+            </Button>
             <Button
               onClick={handleListFood}
               className="bg-emerald-600 hover:bg-emerald-500 text-white"

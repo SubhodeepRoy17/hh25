@@ -21,6 +21,7 @@ import {
   Coins,
   Package,
   Star,
+  LogOut,
   ChevronRight,
   Utensils,
   AlertCircle,
@@ -297,6 +298,18 @@ export default function ReceiverDashboardPage() {
               className="border-emerald-500/40 bg-transparent text-emerald-100 relative"
             >
               <Bell className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userData');
+                router.push('/auth/login');
+              }}
+              variant="outline"
+              size="sm"
+              className="border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300"
+            >
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
