@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils"
 import { FoodType, Freshness, QuantityUnit } from "@/lib/models/FoodListing"
 import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/hooks/useAuth"
 
 interface StatsData {
   totalMeals: number
@@ -46,8 +47,14 @@ interface FoodListing {
   unit: QuantityUnit
   freshness: Freshness
   availableUntil: Date
-  location: string
-  images: string
+  location: {
+    address: string
+    coordinates: {
+      lat: number
+      lng: number
+    }
+  }
+  images: string[]
   status: 'draft' | 'published' | 'claimed' | 'completed'
   interestedUsers?: number
   createdAt: Date
@@ -61,6 +68,7 @@ export default function DashboardPage() {
   const { notifications, unreadCount } = useNotifications()
   const [currentIndex, setCurrentIndex] = useState(0)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const [loading, setLoading] = useState({
     stats: true,
@@ -119,7 +127,7 @@ export default function DashboardPage() {
           totalWeight: 1423,
           co2Saved: 3.2,
           peopleFed: 1892,
-          activeListings: 12,
+          activeListings: recentListings.length,
           completedPickups: 156,
           monthlyGrowth: 23.5,
           avgResponseTime: 18,
@@ -151,6 +159,8 @@ export default function DashboardPage() {
       packaged: { label: 'Packaged', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
       beverages: { label: 'Beverages', color: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
       mixed: { label: 'Mixed', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+      vegetarian: { label: 'Vegetarian', color: 'bg-green-500/20 text-green-300 border-green-500/30' },
+      vegan: { label: 'Vegan', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
     }
     return (
       <Badge className={`text-xs ${typeMap[type].color}`}>
@@ -216,6 +226,13 @@ export default function DashboardPage() {
                 </Button>
               </Link>
             )}
+            <Button
+              onClick={handleListFood}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              List Food
+            </Button>
           </div>
         </div>
 
@@ -365,7 +382,7 @@ export default function DashboardPage() {
                               </span>
                               <span className="flex items-center gap-1">
                                 <MapPin className="h-4 w-4" />
-                                {listing.location}
+                                {listing.location.address}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-4 w-4" />

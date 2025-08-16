@@ -1,7 +1,5 @@
-//app/dashboard/donor/list-food/page.tsx
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,7 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import ProtectedRoute from "@/components/auth/ProtectedRoute"
 import { useAuth } from "@/hooks/useAuth"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import {
   Utensils,
   Package,
@@ -31,7 +29,7 @@ import { cn } from "@/lib/utils"
 
 type QuantityUnit = "meals" | "kg" | "trays" | "boxes"
 type Freshness = "fresh-hot" | "fresh-chilled" | "frozen" | "room-temp" | "packaged"
-type FoodType = "cooked" | "produce" | "bakery" | "packaged" | "beverages" | "mixed"
+type FoodType = "cooked" | "produce" | "bakery" | "packaged" | "beverages" | "mixed" | "vegetarian" | "vegan"
 
 function ListingFoodPageContent() {
   const router = useRouter()
@@ -46,16 +44,53 @@ function ListingFoodPageContent() {
   const [availableFrom, setAvailableFrom] = useState("")
   const [availableUntil, setAvailableUntil] = useState("")
   const [location, setLocation] = useState("")
+  const [locationCoords, setLocationCoords] = useState({ lat: 0, lng: 0 })
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [instructions, setInstructions] = useState("")
   const [allowPartial, setAllowPartial] = useState(true)
   const [requireInsulated, setRequireInsulated] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [files, setFiles] = useState<FileList | null>(null)
-
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { user } = useAuth()
 
-  const green = "#2ECC71"
+  // Fetch location suggestions from OpenStreetMap Nominatim API
+  const fetchLocationSuggestions = async (query: string) => {
+    if (query.length < 3) {
+      setLocationSuggestions([])
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`
+      )
+      const data = await response.json()
+      setLocationSuggestions(data)
+    } catch (error) {
+      console.error("Error fetching location suggestions:", error)
+    }
+  }
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (location) {
+        fetchLocationSuggestions(location)
+      }
+    }, 300)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [location])
+
+  const handleLocationSelect = (suggestion: any) => {
+    setLocation(suggestion.display_name)
+    setLocationCoords({
+      lat: parseFloat(suggestion.lat),
+      lng: parseFloat(suggestion.lon)
+    })
+    setShowSuggestions(false)
+  }
 
   const toggleType = (val: FoodType) => {
     setTypes((prev) => (prev.includes(val) ? prev.filter((t) => t !== val) : [...prev, val]))
@@ -72,13 +107,14 @@ function ListingFoodPageContent() {
       e.availableUntil = "Must be after start time."
     }
     if (location.trim().length < 3) e.location = "Enter pickup location."
+    if (locationCoords.lat === 0 && locationCoords.lng === 0) e.location = "Please select a valid location from suggestions."
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
+    e.preventDefault()
+    if (!validate()) return
 
     if (!user) {
       toast({
@@ -92,57 +128,59 @@ function ListingFoodPageContent() {
     setIsSubmitting(true)
 
     try {
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('types', JSON.stringify(types));
-        formData.append('quantity', quantity.toString());
-        formData.append('unit', unit);
-        formData.append('freshness', freshness);
-        formData.append('availableFrom', availableFrom);
-        formData.append('availableUntil', availableUntil);
-        formData.append('location', location);
-        formData.append('instructions', instructions);
-        formData.append('allowPartial', allowPartial.toString());
-        formData.append('requireInsulated', requireInsulated.toString());
-        formData.append('createdBy', user.userId);
-        if (files) {
+      const formData = new FormData()
+      formData.append('title', title)
+      formData.append('types', JSON.stringify(types))
+      formData.append('quantity', quantity.toString())
+      formData.append('unit', unit)
+      formData.append('freshness', freshness)
+      formData.append('availableFrom', availableFrom)
+      formData.append('availableUntil', availableUntil)
+      formData.append('location', JSON.stringify({
+        address: location,
+        coordinates: locationCoords
+      }))
+      formData.append('instructions', instructions)
+      formData.append('allowPartial', allowPartial.toString())
+      formData.append('requireInsulated', requireInsulated.toString())
+      formData.append('createdBy', user.userId)
+      if (files) {
         Array.from(files).forEach((file) => {
-            formData.append('photos', file);
-        });
-        }
-
-        const response = await fetch('/api/listings', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          },
-          body: formData,
+          formData.append('photos', file)
         })
+      }
 
-        const data = await response.json();
+      const response = await fetch('/api/listings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: formData,
+      })
 
-        if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit listing');
-        }
+      const data = await response.json()
 
-        toast({
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit listing')
+      }
+
+      toast({
         title: "Listing published",
         description: "Receivers nearby will be notified.",
-        });
+      })
 
-        router.push("/dashboard/donor/list-food/success");
+      router.push("/dashboard/donor/list-food/success")
     } catch (error) {
-        toast({
+      toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to publish listing",
         variant: "destructive",
-        });
-        console.error('Submission error:', error);
-    }
-    finally {
+      })
+      console.error('Submission error:', error)
+    } finally {
       setIsSubmitting(false)
     }
-    }
+  }
 
   const unitLabel: Record<QuantityUnit, string> = {
     meals: "meals",
@@ -166,6 +204,8 @@ function ListingFoodPageContent() {
     { key: "packaged", label: "Packaged", icon: <Package className="h-4 w-4" /> },
     { key: "beverages", label: "Beverages", icon: <Package className="h-4 w-4" /> },
     { key: "mixed", label: "Mixed", icon: <Package className="h-4 w-4" /> },
+    { key: "vegetarian", label: "Vegetarian", icon: <Package className="h-4 w-4" /> },
+    { key: "vegan", label: "Vegan", icon: <Package className="h-4 w-4" /> },
   ]
 
   return (
@@ -349,69 +389,88 @@ function ListingFoodPageContent() {
             </Card>
 
             <Card className="bg-black bg-gradient-to-br from-emerald-900/10 to-emerald-700/5 border border-gray-800 rounded-lg">
-                <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-white">
-                    <MapPin className="h-5 w-5 text-emerald-300" />
-                    <span className="text-lg font-semibold">Pickup & Instructions</span>
-                    </CardTitle>
-                </CardHeader>
-                
-                <CardContent className="space-y-4 text-white">
-                    <div className="space-y-2">
-                    <Label htmlFor="location" className="text-sm font-medium text-gray-300">
-                        Pickup location
-                    </Label>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <MapPin className="h-5 w-5 text-emerald-300" />
+                  <span className="text-lg font-semibold">Pickup & Instructions</span>
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="space-y-4 text-white">
+                <div className="space-y-2 relative">
+                  <Label htmlFor="location" className="text-sm font-medium text-gray-300">
+                    Pickup location
+                  </Label>
+                  <div className="relative">
                     <Input
-                        id="location"
-                        placeholder="Canteen loading dock, South Campus"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        className={cn(
+                      id="location"
+                      placeholder="Start typing to search locations..."
+                      value={location}
+                      onChange={(e) => {
+                        setLocation(e.target.value)
+                        setShowSuggestions(true)
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
+                      className={cn(
                         "bg-gray-900/50 border-gray-700 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30",
                         errors.location && "border-red-500 focus:border-red-500 focus:ring-red-500/30"
-                        )}
+                      )}
                     />
-                    {errors.location && (
-                        <p className="text-red-400 text-xs mt-1">{errors.location}</p>
+                    {showSuggestions && locationSuggestions.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {locationSuggestions.map((suggestion, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-sm"
+                            onClick={() => handleLocationSelect(suggestion)}
+                          >
+                            {suggestion.display_name}
+                          </div>
+                        ))}
+                      </div>
                     )}
+                  </div>
+                  {errors.location && (
+                    <p className="text-red-400 text-xs mt-1">{errors.location}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="instructions" className="text-sm font-medium text-gray-300">
+                    Notes for pickup
+                  </Label>
+                  <Textarea
+                    id="instructions"
+                    placeholder="Bring insulated cambros. Call security at gate B. Avoid 2–3pm rush."
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    className="bg-gray-900/50 border-gray-700 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 min-h-[100px]"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="photos" className="text-sm font-medium text-gray-300">
+                    Photos (optional)
+                  </Label>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <Input
+                        id="photos"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => setFiles(e.target.files)}
+                        className="file:mr-3 file:rounded-sm file:border-0 file:bg-emerald-500/90 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-emerald-600 transition-colors cursor-pointer bg-gray-900/50 border-gray-700"
+                      />
                     </div>
-                    
-                    <div className="space-y-2">
-                    <Label htmlFor="instructions" className="text-sm font-medium text-gray-300">
-                        Notes for pickup
-                    </Label>
-                    <Textarea
-                        id="instructions"
-                        placeholder="Bring insulated cambros. Call security at gate B. Avoid 2–3pm rush."
-                        value={instructions}
-                        onChange={(e) => setInstructions(e.target.value)}
-                        className="bg-gray-900/50 border-gray-700 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 min-h-[100px]"
-                    />
+                    <div className="flex items-center gap-2 text-gray-400 text-xs">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      <span>PNG, JPG up to 5MB each</span>
                     </div>
-                    
-                    <div className="space-y-2">
-                    <Label htmlFor="photos" className="text-sm font-medium text-gray-300">
-                        Photos (optional)
-                    </Label>
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                        <Input
-                            id="photos"
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={(e) => setFiles(e.target.files)}
-                            className="file:mr-3 file:rounded-sm file:border-0 file:bg-emerald-500/90 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-emerald-600 transition-colors cursor-pointer bg-gray-900/50 border-gray-700"
-                        />
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-400 text-xs">
-                        <ImageIcon className="h-3.5 w-3.5" />
-                        <span>PNG, JPG up to 5MB each</span>
-                        </div>
-                    </div>
-                    </div>
-                </CardContent>
-                </Card>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Button
               type="submit"
@@ -458,7 +517,11 @@ function ListingFoodPageContent() {
                         {availableUntil ? new Date(availableUntil).toLocaleString() : "End Time"}
                       </span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span className="truncate">{location || "Pickup location"}</span>
                     </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -476,5 +539,3 @@ export default function ListingFoodPage(){
     </ProtectedRoute>
   )
 }
-                      
-                        
