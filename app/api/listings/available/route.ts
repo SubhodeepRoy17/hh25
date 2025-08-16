@@ -60,65 +60,63 @@ export async function GET(req: Request) {
 
     if (isNaN(lat) || isNaN(lng)) {
       return NextResponse.json(
-        { error: 'Location coordinates are required' },
+        { error: 'Valid coordinates are required' },
         { status: 400 }
       );
     }
 
-    // Build query
-    const query: any = { 
+    // Build query conditions
+    const matchConditions: any = {
       status: 'published',
       availableUntil: { $gte: new Date() }
     };
 
     if (vegOnly) {
-      query.types = { $in: ['vegetarian', 'vegan'] };
+      matchConditions.types = { $in: ['vegetarian', 'vegan'] };
     }
 
     if (searchQuery) {
-      query.$text = { $search: searchQuery };
+      matchConditions.$text = { $search: searchQuery };
     }
 
-    // Geo query
-    const geoQuery = {
-      'location.coordinates': {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [lng, lat]
-          },
-          $maxDistance: maxDistance * 1000 // Convert km to meters
-        }
-      }
-    };
-
-    // Fetch listings with distance calculation
+    // Fetch listings with proper geospatial query
     const listings: FoodListingResponse[] = await FoodListing.aggregate([
       {
-        $match: {
-          ...query,
-          ...geoQuery
+        $geoNear: {
+          near: { 
+            type: "Point", 
+            coordinates: [lng, lat] // GeoJSON uses [longitude, latitude]
+          },
+          distanceField: "distance",
+          maxDistance: maxDistance * 1000, // Convert km to meters
+          spherical: true,
+          query: matchConditions
         }
       },
       {
         $addFields: {
-          distance: {
-            $divide: [
-              {
-                $sqrt: {
-                  $add: [
-                    { $pow: [{ $subtract: ['$location.coordinates.lng', lng] }, 2] },
-                    { $pow: [{ $subtract: ['$location.coordinates.lat', lat] }, 2] }
-                  ]
-                }
-              },
-              0.009 // Approximation for km (1 degree ~ 111km)
-            ]
-          }
+          distance: { $divide: ["$distance", 1000] } // Convert meters to km
         }
       },
       { $sort: { distance: 1 } }, // Sort by nearest first
-      { $limit: 20 }
+      { $limit: 20 },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          types: 1,
+          quantity: 1,
+          unit: 1,
+          freshness: 1,
+          availableUntil: 1,
+          location: 1,
+          distance: 1,
+          status: 1,
+          interestedUsers: 1,
+          createdAt: 1,
+          images: 1
+        }
+      }
     ]);
 
     return NextResponse.json({ listings }, { status: 200 });
@@ -134,6 +132,7 @@ export async function GET(req: Request) {
 export async function OPTIONS() {
   const headers = new Headers();
   headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Access-Control-Allow-Origin', 'https://hh25-olive.vercel.app')
   headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
   headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return new NextResponse(null, { headers });
