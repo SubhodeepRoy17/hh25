@@ -89,25 +89,18 @@ export default function ReceiverDashboardPage() {
 
   // Get user's current location
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (err) => {
-          setLocationError("Unable to retrieve your location. Showing listings near default location.")
-          console.error("Geolocation error:", err)
-          setUserLocation({ lat: 12.9716, lng: 77.5946 }) // Default to Bangalore coordinates
-        }
-      )
-    } else {
-      setLocationError("Geolocation not supported. Showing listings near default location.")
-      setUserLocation({ lat: 12.9716, lng: 77.5946 }) // Default to Bangalore coordinates
-    }
-  }, [])
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log("Browser geolocation:", { latitude, longitude }); // 🚨 Log this!
+        setUserLocation({ lat: latitude, lng: longitude });
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        setUserLocation({ lat: 12.9716, lng: 77.5946 }); // Default fallback
+      }
+    );
+  }, []);
 
   // Fetch listings when filters or location change
   useEffect(() => {
