@@ -1,31 +1,8 @@
-// app/api/listings/available/route.ts
 import { NextResponse } from 'next/server';
 import FoodListing from '@/lib/models/FoodListing';
 import connectDB from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import mongoose from 'mongoose';
-
-interface FoodListingResponse {
-  _id: string;
-  title: string;
-  types: string[];
-  quantity: number;
-  unit: string;
-  freshness: string;
-  availableUntil: Date;
-  location: {
-    address: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
-  distance?: number;
-  status: string;
-  interestedUsers?: number;
-  createdAt: Date;
-  images?: string[];
-}
 
 export async function GET(req: Request) {
   await connectDB();
@@ -50,13 +27,18 @@ export async function GET(req: Request) {
       );
     }
 
-    // Get query parameters
+    // Get query parameters with proper type handling
     const { searchParams } = new URL(req.url);
-    const lat = parseFloat(searchParams.get('lat') || '');
-    const lng = parseFloat(searchParams.get('lng') || '');
-    const maxDistance = parseInt(searchParams.get('maxDistance') || '10'); // Default 10km
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
+    const maxDistanceParam = searchParams.get('maxDistance');
     const vegOnly = searchParams.get('vegOnly') === 'true';
     const searchQuery = searchParams.get('query') || '';
+
+    // Convert and validate coordinates
+    const lat = latParam ? parseFloat(latParam) : 0;
+    const lng = lngParam ? parseFloat(lngParam) : 0;
+    const maxDistance = maxDistanceParam ? parseInt(maxDistanceParam) : 10;
 
     if (isNaN(lat) || isNaN(lng)) {
       return NextResponse.json(
@@ -79,8 +61,7 @@ export async function GET(req: Request) {
       matchConditions.$text = { $search: searchQuery };
     }
 
-    // Fetch listings with proper geospatial query
-    const listings: FoodListingResponse[] = await FoodListing.aggregate([
+    const listings = await FoodListing.aggregate([
       {
         $geoNear: {
           near: { 
@@ -98,8 +79,8 @@ export async function GET(req: Request) {
           distance: { $divide: ["$distance", 1000] } // Convert meters to km
         }
       },
-      { $sort: { distance: 1 } }, // Sort by nearest first
-      { $limit: 20 },
+      { $sort: { distance: 1 } },
+      { $limit: 50 },
       {
         $project: {
           _id: 1,
@@ -121,19 +102,13 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ listings }, { status: 200 });
   } catch (error) {
-    console.error('Error fetching available listings:', error);
+    console.error('Error in available listings:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch listings' },
+      { 
+        error: 'Failed to fetch listings',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
-}
-
-export async function OPTIONS() {
-  const headers = new Headers();
-  headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Access-Control-Allow-Origin', 'https://hh25-olive.vercel.app')
-  headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  return new NextResponse(null, { headers });
 }

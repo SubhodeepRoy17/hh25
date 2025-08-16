@@ -1,4 +1,3 @@
-// lib/models/FoodListing.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export type FoodType = 'cooked' | 'produce' | 'bakery' | 'packaged' | 'beverages' | 'mixed' | 'vegetarian' | 'vegan';
@@ -68,13 +67,30 @@ const FoodListingSchema = new Schema<IFoodListing>(
   { timestamps: true }
 );
 
-// Create geospatial index for location searches
+// Create indexes
 FoodListingSchema.index({ 'location.coordinates': '2dsphere' });
+FoodListingSchema.index({ title: 'text', 'location.address': 'text', instructions: 'text' });
 
-FoodListingSchema.index({
-  title: 'text',
-  'location.address': 'text',
-  instructions: 'text'
-});
+// Add static method to ensure indexes
+FoodListingSchema.statics.ensureIndexes = async function() {
+  await this.syncIndexes();
+};
 
-export default mongoose.models.FoodListing || mongoose.model<IFoodListing>('FoodListing', FoodListingSchema);
+const FoodListing = mongoose.models.FoodListing || mongoose.model<IFoodListing>('FoodListing', FoodListingSchema);
+
+// Ensure indexes on startup
+async function ensureIndexes() {
+  try {
+    await FoodListing.ensureIndexes();
+    console.log('FoodListing indexes verified');
+  } catch (err) {
+    console.error('Error ensuring indexes:', err);
+  }
+}
+
+// Run in non-production or when needed
+if (process.env.NODE_ENV !== 'production') {
+  ensureIndexes();
+}
+
+export default FoodListing;
