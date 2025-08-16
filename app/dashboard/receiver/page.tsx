@@ -97,7 +97,7 @@ export default function ReceiverDashboardPage() {
       },
       (err) => {
         console.error("Geolocation error:", err);
-        setUserLocation({ lat: 12.9716, lng: 77.5946 }); // Default fallback
+        setLocationError("Enable location access to see nearby listings.");
       }
     );
   }, []);
@@ -117,12 +117,14 @@ export default function ReceiverDashboardPage() {
         }
 
         const params = new URLSearchParams({
-          lat: userLocation.lat.toString(),
-          lng: userLocation.lng.toString(),
+          lat: userLocation.lat.toString(), // ✅ Must be 22.5006 (Kolkata)
+          lng: userLocation.lng.toString(), // ✅ Must be 88.3007 (Kolkata)
           maxDistance: maxDistance.toString(),
           vegOnly: vegOnly.toString(),
           query: searchQuery
-        })
+        });
+
+        console.log("Sending coordinates to API:", params.toString());
 
         const response = await fetch(`/api/listings/available?${params.toString()}`, {
           headers: {

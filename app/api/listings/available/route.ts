@@ -31,6 +31,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const lat = parseFloat(searchParams.get('lat') || '0');
     const lng = parseFloat(searchParams.get('lng') || '0');
+    console.log("API received coordinates:", { lat, lng });
     const maxDistance = parseInt(searchParams.get('maxDistance') || '10');
     const vegOnly = searchParams.get('vegOnly') === 'true';
     const searchQuery = searchParams.get('query') || '';
