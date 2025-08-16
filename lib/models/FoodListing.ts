@@ -1,3 +1,4 @@
+// lib/models/FoodListing.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export type FoodType = 'cooked' | 'produce' | 'bakery' | 'packaged' | 'beverages' | 'mixed' | 'vegetarian' | 'vegan';
@@ -5,6 +6,7 @@ export type Freshness = 'fresh-hot' | 'fresh-chilled' | 'frozen' | 'room-temp' |
 export type QuantityUnit = 'meals' | 'kg' | 'trays' | 'boxes';
 
 interface Location {
+  geoPoint: { type: string; coordinates: number[]; };
   address: string;
   coordinates: {
     lat: number;
@@ -27,15 +29,34 @@ export interface IFoodListing extends Document {
   images?: string[];
   status: 'draft' | 'published' | 'claimed' | 'completed' | 'expired';
   createdBy: Schema.Types.ObjectId;
+  interestedUsers?: number;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// GeoJSON Point schema for proper geospatial indexing
+const GeoJSONPointSchema = new Schema({
+  type: {
+    type: String,
+    enum: ['Point'],
+    default: 'Point'
+  },
+  coordinates: {
+    type: [Number], // [longitude, latitude]
+    required: true
+  }
+});
 
 const LocationSchema = new Schema({
   address: { type: String, required: true },
   coordinates: {
     lat: { type: Number, required: true },
     lng: { type: Number, required: true }
+  },
+  // Add GeoJSON point for geospatial queries
+  geoPoint: {
+    type: GeoJSONPointSchema,
+    index: '2dsphere'
   }
 });
 
@@ -63,17 +84,38 @@ const FoodListingSchema = new Schema<IFoodListing>(
       default: 'draft' 
     },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    interestedUsers: { type: Number, default: 0 }
   },
   { timestamps: true }
 );
 
 // Create indexes
-FoodListingSchema.index({ 'location.coordinates': '2dsphere' });
+FoodListingSchema.index({ 'location.geoPoint': '2dsphere' });
+FoodListingSchema.index({ 'location.coordinates.lat': 1, 'location.coordinates.lng': 1 });
+FoodListingSchema.index({ status: 1, availableUntil: 1 });
+FoodListingSchema.index({ createdBy: 1, status: 1 });
 FoodListingSchema.index({ title: 'text', 'location.address': 'text', instructions: 'text' });
 
-// Add static method to ensure indexes
+// Pre-save middleware to create GeoJSON point from coordinates
+FoodListingSchema.pre('save', function(next) {
+  if (this.location && this.location.coordinates) {
+    this.location.geoPoint = {
+      type: 'Point',
+      coordinates: [this.location.coordinates.lng, this.location.coordinates.lat]
+    };
+  }
+  next();
+});
+
+// Static method to ensure indexes
 FoodListingSchema.statics.ensureIndexes = async function() {
-  await this.syncIndexes();
+  try {
+    await this.syncIndexes();
+    console.log('FoodListing indexes verified');
+  } catch (err) {
+    console.error('Error ensuring indexes:', err);
+    throw err;
+  }
 };
 
 const FoodListing = mongoose.models.FoodListing || mongoose.model<IFoodListing>('FoodListing', FoodListingSchema);
@@ -82,15 +124,13 @@ const FoodListing = mongoose.models.FoodListing || mongoose.model<IFoodListing>(
 async function ensureIndexes() {
   try {
     await FoodListing.ensureIndexes();
-    console.log('FoodListing indexes verified');
+    console.log('FoodListing geospatial indexes created successfully');
   } catch (err) {
-    console.error('Error ensuring indexes:', err);
+    console.error('Error ensuring FoodListing indexes:', err);
   }
 }
 
-// Run in non-production or when needed
-if (process.env.NODE_ENV !== 'production') {
-  ensureIndexes();
-}
+// Run index creation
+ensureIndexes();
 
 export default FoodListing;
