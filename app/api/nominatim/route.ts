@@ -11,7 +11,7 @@ export async function GET(request: Request) {
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=${limit}`,
       {
         headers: {
-          'User-Agent': 'YourAppName (your@email.com)' // Required by Nominatim
+          'User-Agent': 'SmartSurplus (subhodeeproy37@email.com)'
         }
       }
     );
