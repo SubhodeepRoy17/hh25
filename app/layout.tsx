@@ -1,5 +1,4 @@
-// app/layout.tsx
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { ToasterProvider } from "@/components/toaster-provider"
@@ -13,15 +12,11 @@ export const metadata: Metadata = {
   description: 'Connect food donors with receivers to reduce waste',
   generator: 'Next.js',
   manifest: '/manifest.json',
-  themeColor: '#10b981', // Emerald color
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-  other: {
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com; connect-src 'self' https:; worker-src 'self' blob:;",
-  },
   icons: {
     icon: '/main_logo.png',
     apple: '/main_logo.png',
   },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {
     type: 'website',
     url: 'https://yourdomain.com',
@@ -32,6 +27,14 @@ export const metadata: Metadata = {
       url: '/placeholder-logo.png',
     }],
   }
+}
+
+export const viewport: Viewport = {
+  themeColor: '#10b981',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover'
 }
 
 export default function RootLayout({
@@ -53,16 +56,13 @@ export default function RootLayout({
           }
         `}</style>
         
-        {/* Preconnect to important origins */}
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         
-        {/* Add PWA meta tags */}
         <meta name="application-name" content="CommunityBite" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="CommunityBite" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#10b981" />
       </head>
       <body className="min-h-screen bg-background antialiased">
         <AuthProvider>
@@ -70,10 +70,9 @@ export default function RootLayout({
             <ToasterProvider />
             {children}
             
-            {/* Service Worker Registration */}
             <Script id="sw-registration" strategy="afterInteractive">
               {`
-                if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
+                if ('serviceWorker' in navigator) {
                   const registerSw = async () => {
                     try {
                       const registration = await navigator.serviceWorker.register('/sw.js', {
@@ -83,14 +82,12 @@ export default function RootLayout({
                       
                       console.log('SW registered: ', registration);
                       
-                      // Check for updates every hour
                       setInterval(() => {
                         registration.update().catch(err => {
                           console.log('SW update error: ', err);
                         });
                       }, 60 * 60 * 1000);
                       
-                      // Handle push subscription
                       if ('PushManager' in window) {
                         const permission = await Notification.requestPermission();
                         if (permission === 'granted') {
@@ -99,7 +96,6 @@ export default function RootLayout({
                             applicationServerKey: '${process.env.NEXT_PUBLIC_VAPID_KEY}'
                           });
                           
-                          // Send subscription to server
                           await fetch('/api/push/subscribe', {
                             method: 'POST',
                             headers: {
@@ -117,7 +113,6 @@ export default function RootLayout({
                   
                   window.addEventListener('load', registerSw);
                   
-                  // Re-register if auth state changes
                   if (typeof window !== 'undefined') {
                     window.addEventListener('authStateChanged', registerSw);
                   }
