@@ -1,4 +1,3 @@
-// context/NotificationsContext.tsx
 "use client"
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
@@ -29,7 +28,6 @@ interface NotificationsContextType {
   markAsRead: (id: string) => Promise<void>
   fetchNotifications: () => Promise<void>
   markAllAsRead: () => Promise<void>
-  sendNotification: (notification: Omit<Notification, '_id' | 'createdAt' | 'read'>) => Promise<void>
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined)
@@ -44,29 +42,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const router = useRouter()
   const eventSourceRef = useRef<EventSource | null>(null)
 
-  const setupPushNotifications = useCallback(async () => {
-    if (!('serviceWorker' in navigator) || !user) return
-
-    try {
-      const registration = await navigator.serviceWorker.ready
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY
-      })
-
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify(subscription)
-      })
-    } catch (error) {
-      console.error('Push registration failed:', error)
-    }
-  }, [user])
-
   const fetchNotifications = useCallback(async () => {
     if (!user) return
     
@@ -76,9 +51,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     try {
       const token = localStorage.getItem('authToken')
       const response = await fetch('/api/notifications', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       })
       
       if (!response.ok) throw new Error('Failed to fetch notifications')
@@ -138,94 +111,71 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [])
 
-  const sendNotification = useCallback(async (notification: Omit<Notification, '_id' | 'createdAt' | 'read'>) => {
-    try {
-      const token = localStorage.getItem('authToken')
-      const response = await fetch('/api/notifications', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(notification)
-      })
-      
-      if (!response.ok) throw new Error('Failed to send notification')
-      
-      return await response.json()
-    } catch (error) {
-      console.error('Error sending notification:', error)
-      throw error
-    }
-  }, [])
-
   const setupEventSource = useCallback(() => {
     if (!user) return
 
     const token = localStorage.getItem('authToken')
     if (!token) return
 
-    // Close existing connection if any
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
     }
 
-    const encodedToken = encodeURIComponent(token)
-    const eventSource = new EventSource(`/api/notifications/stream?token=${encodedToken}`)
+    const eventSource = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`)
     eventSourceRef.current = eventSource
+
+    eventSource.onopen = () => {
+      console.log('SSE connection established')
+    }
 
     eventSource.onmessage = (event) => {
       try {
+        if (event.data === ': heartbeat') return
+        
         const data = JSON.parse(event.data)
         
         if (data.type === 'INITIAL') {
-          setNotifications(prev => [...data.notifications, ...prev])
-          setUnreadCount(prev => prev + data.notifications.filter((n: Notification) => !n.read).length)
+          setNotifications(data.notifications)
+          setUnreadCount(data.notifications.filter((n: Notification) => !n.read).length)
         } 
         else if (data.type === 'NEW_NOTIFICATION') {
           const newNotification = data.notification
           setNotifications(prev => [newNotification, ...prev])
-          setUnreadCount(prev => prev + (newNotification.read ? 0 : 1))
+          setUnreadCount(prev => prev + 1)
           
-          // In your notification context where you show the toast:
-          if (newNotification.userId === user?.userId) {
-            toast({
-              title: "New Notification",
-              description: newNotification.message,
-              variant: newNotification.urgent ? "destructive" : "default",
-              action: newNotification.listingId ? (
-                <ToastAction 
-                  altText="View listing" 
-                  onClick={() => router.push(`/listings/${newNotification.listingId}`)}
-                >
-                  View
-                </ToastAction>
-              ) : undefined
-            })
-          }
+          toast({
+            title: "New Notification",
+            description: newNotification.message,
+            variant: newNotification.urgent ? "destructive" : "default",
+            action: newNotification.listingId ? (
+              <ToastAction 
+                altText="View listing" 
+                onClick={() => router.push(`/listings/${newNotification.listingId}`)}
+              >
+                View
+              </ToastAction>
+            ) : undefined
+          })
         }
       } catch (error) {
         console.error('Error processing SSE message:', error)
       }
     }
 
-    eventSource.onerror = (error) => {
-      console.error('SSE error:', error)
-      // Reconnect after 5 seconds if connection drops
+    eventSource.onerror = () => {
+      console.error('SSE connection error, reconnecting...')
+      eventSource.close()
       setTimeout(() => setupEventSource(), 5000)
     }
 
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close()
-      }
+      eventSource.close()
     }
   }, [user, toast, router])
 
   useEffect(() => {
     if (user) {
       fetchNotifications()
-      setupPushNotifications()
       setupEventSource()
     }
 
@@ -234,7 +184,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         eventSourceRef.current.close()
       }
     }
-  }, [user, fetchNotifications, setupPushNotifications, setupEventSource])
+  }, [user, fetchNotifications, setupEventSource])
 
   return (
     <NotificationsContext.Provider 
@@ -245,8 +195,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         error,
         markAsRead,
         fetchNotifications,
-        markAllAsRead,
-        sendNotification
+        markAllAsRead
       }}
     >
       {children}

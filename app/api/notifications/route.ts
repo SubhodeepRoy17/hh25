@@ -1,4 +1,3 @@
-// app/api/notifications/route.ts
 import { NextResponse, NextRequest } from 'next/server'
 import NotificationModel from "@/lib/models/Notification"
 import { auth } from "@/lib/auth"
@@ -8,6 +7,7 @@ import NotificationSubcriptionModel from '@/lib/models/NotificationSubcriptionMo
 
 export const dynamic = 'force-dynamic'
 
+// Initialize webpush
 try {
   webpush.setVapidDetails(
     `mailto:${process.env.NOTIFICATION_EMAIL}`,
@@ -25,10 +25,7 @@ export async function GET(req: NextRequest) {
     const session = await auth(req)
     
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" }, 
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const [notifications, unreadCount] = await Promise.all([
@@ -63,16 +60,12 @@ export async function POST(req: NextRequest) {
     const session = await auth(req)
     
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" }, 
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await req.json()
     const { userId, type, message, urgent, listingId, metadata } = body
 
-    // Validate required fields
     if (!userId || !type || !message) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -80,7 +73,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create notification
     const notification = new NotificationModel({
       userId,
       type,
@@ -92,17 +84,19 @@ export async function POST(req: NextRequest) {
     })
 
     await notification.save()
+    console.log('Notification saved to DB:', notification._id)
 
-    // Send push notification if available
+    // Send push notification
     try {
       const subscription = await NotificationSubcriptionModel.findOne({ userId })
       if (subscription) {
+        console.log('Sending push notification to user:', userId)
         await webpush.sendNotification(
           subscription.subscription,
           JSON.stringify({
             title: "New Notification",
             body: message,
-            icon: "/placeholder-logo.png",
+            icon: "/main_logo.png",
             data: { 
               url: listingId ? `/listings/${listingId}` : '/dashboard'
             }
@@ -110,7 +104,7 @@ export async function POST(req: NextRequest) {
         )
       }
     } catch (error) {
-      console.error('Failed to send push notification:', error)
+      console.error('Push notification failed:', error)
     }
 
     return NextResponse.json(notification)

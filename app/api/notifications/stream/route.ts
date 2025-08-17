@@ -1,4 +1,3 @@
-// app/api/notifications/stream/route.ts
 import { NextResponse } from 'next/server'
 import { verifyTokenForSSE } from '@/lib/auth'
 import connectToDB from '@/lib/db'
@@ -18,40 +17,38 @@ export async function GET(request: Request) {
     }
 
     const decoded = verifyTokenForSSE(token)
-    if (!decoded) {
+    if (!decoded?.userId) {
       return new NextResponse('Invalid token', { status: 401 })
     }
 
     const stream = new ReadableStream({
       async start(controller) {
-        // Send initial unread notifications
+        console.log(`New SSE connection for user: ${decoded.userId}`)
+        
+        // Send heartbeat every 25 seconds
+        const heartbeatInterval = setInterval(() => {
+          controller.enqueue(': heartbeat\n\n')
+        }, 25000)
+
+        // Send initial notifications
         const initialNotifications = await NotificationModel.find({
           userId: decoded.userId,
           read: false
-        })
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .lean()
+        }).sort({ createdAt: -1 }).limit(10).lean()
 
-        controller.enqueue(
-          `data: ${JSON.stringify({
-            type: 'INITIAL',
-            notifications: initialNotifications
-          })}\n\n`
-        )
+        controller.enqueue(`data: ${JSON.stringify({
+          type: 'INITIAL',
+          notifications: initialNotifications
+        })}\n\n`)
 
         // Watch for new notifications
         const changeStream = NotificationModel.watch(
-          [
-            {
-              $match: {
-                $or: [
-                  { 'fullDocument.userId': decoded.userId },
-                  { operationType: 'delete' } // Handle deletions if needed
-                ]
-              }
+          [{
+            $match: {
+              'fullDocument.userId': decoded.userId,
+              operationType: 'insert'
             }
-          ],
+          }],
           { 
             fullDocument: 'updateLookup',
             batchSize: 1
@@ -60,17 +57,24 @@ export async function GET(request: Request) {
 
         changeStream.on('change', (change) => {
           if (change.operationType === 'insert') {
-            controller.enqueue(
-              `data: ${JSON.stringify({
-                type: 'NEW_NOTIFICATION',
-                notification: change.fullDocument
-              })}\n\n`
-            )
+            console.log('New notification detected:', change.fullDocument._id)
+            controller.enqueue(`data: ${JSON.stringify({
+              type: 'NEW_NOTIFICATION',
+              notification: change.fullDocument
+            })}\n\n`)
           }
+        })
+
+        changeStream.on('error', (error) => {
+          console.error('Change stream error:', error)
+          clearInterval(heartbeatInterval)
+          controller.close()
         })
 
         // Handle client disconnect
         request.signal.addEventListener('abort', () => {
+          console.log('Client disconnected, cleaning up SSE')
+          clearInterval(heartbeatInterval)
           changeStream.close()
           controller.close()
         })
