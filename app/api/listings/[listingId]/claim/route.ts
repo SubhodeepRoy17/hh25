@@ -1,10 +1,12 @@
-//app/api/listings/[listingId]/claim/route.ts
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import FoodListing from '@/lib/models/FoodListing'
 import connectDB from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import { notifyClaim } from '@/lib/services/notifications'
+import User from '@/lib/models/User'
+import Receiver from '@/lib/models/Receiver'
+import { sendClaimConfirmationEmail } from '@/lib/services/email' // We'll create this
 
 export async function POST(
   request: Request,
@@ -81,13 +83,37 @@ export async function POST(
         qrCodeData: qrCodeData
       },
       { new: true }
-    ).populate('createdBy', 'name')
+    ).populate('createdBy', 'name email')
 
     if (!listing) {
       return NextResponse.json(
         { error: 'Failed to update listing' },
         { status: 500 }
       )
+    }
+
+    // Get receiver details for email
+    const receiver = await Receiver.findOne({ userId: decoded.userId })
+    const user = await User.findById(decoded.userId)
+    
+    if (user && receiver) {
+      // Send confirmation email with QR code
+      await sendClaimConfirmationEmail({
+        to: user.email,
+        receiverName: receiver.fullName,
+        listing: {
+          title: listing.title,
+          quantity: listing.quantity,
+          unit: listing.unit,
+          availableUntil: listing.availableUntil,
+          location: listing.location.address,
+          donorName: (listing.createdBy as any).name,
+          donorEmail: (listing.createdBy as any).email
+        },
+        qrCode: qrCodeData.code,
+        claimDate: new Date(),
+        expiresAt: qrCodeData.expiresAt
+      })
     }
 
     // Send notifications
@@ -117,14 +143,4 @@ export async function POST(
       { status: 500 }
     )
   }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }
-  })
 }

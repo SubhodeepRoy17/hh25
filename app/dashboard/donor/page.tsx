@@ -389,13 +389,6 @@ export default function DashboardPage() {
               <LogOut className="h-5 w-5 mr-2" />
               Logout
             </Button>
-            <Button
-              onClick={handleListFood}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              List Food
-            </Button>
           </div>
         </div>
 
