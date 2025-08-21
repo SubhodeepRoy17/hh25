@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const authUrl = await GoogleCalendarService.getAuthUrl();
+    const authUrl = await GoogleCalendarService.getAuthUrl(decoded.userId);
     return NextResponse.json({ authUrl });
     
   } catch (error) {

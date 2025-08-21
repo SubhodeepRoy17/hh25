@@ -19,16 +19,18 @@ class GoogleCalendarService {
     this.oauth2Client.setCredentials(tokens);
   }
 
-  async getAuthUrl(): Promise<string> {
+  async getAuthUrl(userId: string): Promise<string> {
     return this.oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: [
+        access_type: 'offline',
+        scope: [
         'https://www.googleapis.com/auth/calendar.readonly',
         'https://www.googleapis.com/auth/calendar.events.readonly'
-      ],
-      prompt: 'consent'
+        ],
+        prompt: 'consent',
+        state: userId, // Include user ID in state parameter
+        include_granted_scopes: true
     });
-  }
+    }
 
   async getTokens(code: string): Promise<any> {
     const { tokens } = await this.oauth2Client.getToken(code);
