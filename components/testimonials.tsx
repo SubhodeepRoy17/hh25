@@ -1,142 +1,199 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+import type React from "react"
 import { useState, useEffect } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-export default function Testimonials() {
-  const [currentTestimonial, setCurrentTestimonial] = useState(0)
+const SQRT_5000 = Math.sqrt(5000)
 
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Campus Canteen Manager",
-      image: "/asian-woman-smiling.png",
-      quote:
-        "Smart Surplus helped us reduce food waste by 75% while feeding 200+ students weekly. The platform is incredibly easy to use.",
-    },
-    {
-      name: "Marcus Johnson",
-      role: "Student Council President",
-      image: "/black-male-student.png",
-      quote:
-        "As a student, I've saved over $300 on meals this semester. The real-time notifications are a game-changer.",
-    },
-    {
-      name: "Dr. Priya Sharma",
-      role: "Sustainability Coordinator",
-      image: "/indian-woman-professional.png",
-      quote:
-        "Our campus carbon footprint decreased by 40% since implementing Smart Surplus. The environmental impact is remarkable.",
-    },
-    {
-      name: "Alex Rivera",
-      role: "Event Organizer",
-      image: "/hispanic-person-smiling.png",
-      quote:
-        "Event surplus food now reaches students within minutes instead of going to waste. Setup took only 15 minutes.",
-    },
-    {
-      name: "Emma Thompson",
-      role: "NGO Volunteer Coordinator",
-      image: "/blonde-woman-volunteer.png",
-      quote: "We've distributed 5,000+ meals to food-insecure students. The pickup coordination system is flawless.",
-    },
-  ]
+// Smart Surplus–themed student/NGO quotes
+const testimonials = [
+  {
+    tempId: 0,
+    testimonial: "Saved 500 meals last semester! Our campus pantry is thriving.",
+    by: "Maya, Student Volunteer at Campus Food Rescue",
+    imgSrc: "https://i.pravatar.cc/150?img=1",
+  },
+  {
+    tempId: 1,
+    testimonial: "Cut cafeteria waste by 40% in 3 months. Students notice the difference.",
+    by: "James, Sustainability Coordinator at Northview High",
+    imgSrc: "https://i.pravatar.cc/150?img=2",
+  },
+  {
+    tempId: 2,
+    testimonial: "2,300 meals delivered this month with Smart Surplus routing.",
+    by: "Lina, Logistics Lead at City Food Bank",
+    imgSrc: "https://i.pravatar.cc/150?img=3",
+  },
+  {
+    tempId: 3,
+    testimonial: "Donors love the transparency and instant tax receipts.",
+    by: "Priya, Executive Director at CommunityBite",
+    imgSrc: "https://i.pravatar.cc/150?img=4",
+  },
+  {
+    tempId: 4,
+    testimonial: "Route planning shaved 25% off fuel costs for our volunteers.",
+    by: "Ahmed, Driver Lead at Neighborhood Kitchens",
+    imgSrc: "https://i.pravatar.cc/150?img=5",
+  },
+  {
+    tempId: 5,
+    testimonial: "Blockchain rewards keep our volunteer turnout high every week.",
+    by: "Rosa, Program Manager at GreenPlate Initiative",
+    imgSrc: "https://i.pravatar.cc/150?img=6",
+  },
+  {
+    tempId: 6,
+    testimonial: "Setup took one afternoon; impact was immediate.",
+    by: "Ben, Operations at Meals4All",
+    imgSrc: "https://i.pravatar.cc/150?img=7",
+  },
+  {
+    tempId: 7,
+    testimonial: "Temperature alerts protect food safety on every trip.",
+    by: "Dr. Park, Food Safety Advisor",
+    imgSrc: "https://i.pravatar.cc/150?img=8",
+  },
+]
+
+interface TestimonialCardProps {
+  position: number
+  testimonial: (typeof testimonials)[0]
+  handleMove: (steps: number) => void
+  cardSize: number
+}
+
+const TestimonialCard: React.FC<TestimonialCardProps> = ({ position, testimonial, handleMove, cardSize }) => {
+  const isCenter = position === 0
+  return (
+    <div
+      onClick={() => handleMove(position)}
+      className={cn(
+        "absolute left-1/2 top-1/2 cursor-pointer border-2 p-8 transition-all duration-500 ease-in-out rounded-md",
+        isCenter
+          ? "z-10 bg-primary text-primary-foreground border-primary"
+          : "z-0 bg-card text-card-foreground border-border hover:border-primary/50",
+      )}
+      style={{
+        width: cardSize,
+        height: cardSize,
+        clipPath:
+          "polygon(50px 0%, calc(100% - 50px) 0%, 100% 50px, 100% 100%, calc(100% - 50px) 100%, 50px 100%, 0 100%, 0 0)",
+        transform: `translate(-50%, -50%) translateX(${(cardSize / 1.5) * position}px) translateY(${
+          isCenter ? -65 : position % 2 ? 15 : -15
+        }px) rotate(${isCenter ? 0 : position % 2 ? 2.5 : -2.5}deg)`,
+        boxShadow: isCenter ? "0px 8px 0px 4px hsl(var(--border))" : "0px 0px 0px 0px transparent",
+      }}
+    >
+      <span
+        className="absolute block origin-top-right rotate-45 bg-border"
+        style={{
+          right: -2,
+          top: 48,
+          width: SQRT_5000,
+          height: 2,
+        }}
+      />
+      <img
+        src={testimonial.imgSrc || "/placeholder.svg"}
+        alt={`${testimonial.by.split(",")[0]}`}
+        className="mb-4 h-14 w-12 bg-muted object-cover object-top"
+        style={{
+          boxShadow: "3px 3px 0px hsl(var(--background))",
+        }}
+      />
+      <h3 className={cn("text-base sm:text-xl font-medium", isCenter ? "text-primary-foreground" : "text-foreground")}>
+        "{testimonial.testimonial}"
+      </h3>
+      <p
+        className={cn(
+          "absolute bottom-8 left-8 right-8 mt-2 text-sm italic",
+          isCenter ? "text-primary-foreground/80" : "text-muted-foreground",
+        )}
+      >
+        - {testimonial.by}
+      </p>
+    </div>
+  )
+}
+
+export const StaggerTestimonials: React.FC = () => {
+  const [cardSize, setCardSize] = useState(365)
+  const [testimonialsList, setTestimonialsList] = useState(testimonials)
+
+  const handleMove = (steps: number) => {
+    const newList = [...testimonialsList]
+    if (steps > 0) {
+      for (let i = steps; i > 0; i--) {
+        const item = newList.shift()
+        if (!item) return
+        newList.push({ ...item, tempId: Math.random() })
+      }
+    } else {
+      for (let i = steps; i < 0; i++) {
+        const item = newList.pop()
+        if (!item) return
+        newList.unshift({ ...item, tempId: Math.random() })
+      }
+    }
+    setTestimonialsList(newList)
+  }
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [testimonials.length])
+    const updateSize = () => {
+      const { matches } = window.matchMedia("(min-width: 640px)")
+      setCardSize(matches ? 365 : 290)
+    }
+    updateSize()
+    window.addEventListener("resize", updateSize)
+    return () => window.removeEventListener("resize", updateSize)
+  }, [])
 
   return (
-    <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gray-900 text-white relative overflow-hidden">
-      <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-2 bg-green-500/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-6">
-            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            <span className="text-xs sm:text-sm text-green-300">What partners are saying</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
-            Impact felt in every community
-          </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto px-4">
-            Students, nonprofits, and campus programs use Smart Surplus to turn excess into meals.
-          </p>
-        </div>
-
-        <div className="relative">
-          <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
-            <div className="absolute inset-0 flex items-center justify-center">
-              {testimonials.map((testimonial, index) => {
-                const isActive = index === currentTestimonial
-                const isPrev = index === (currentTestimonial - 1 + testimonials.length) % testimonials.length
-                const isNext = index === (currentTestimonial + 1) % testimonials.length
-
-                let position = "opacity-0 scale-75"
-                let zIndex = 1
-
-                if (isActive) {
-                  position = "opacity-100 scale-100 z-30"
-                  zIndex = 30
-                } else if (isPrev) {
-                  position = "opacity-60 scale-90 -translate-x-32 sm:-translate-x-64 z-20 hidden sm:block"
-                  zIndex = 20
-                } else if (isNext) {
-                  position = "opacity-60 scale-90 translate-x-32 sm:translate-x-64 z-20 hidden sm:block"
-                  zIndex = 20
-                }
-
-                return (
-                  <div
-                    key={index}
-                    className={`absolute transition-all duration-1000 ease-in-out ${position}`}
-                    style={{ zIndex }}
-                  >
-                    <Card
-                      className={`w-80 sm:w-96 mx-4 ${isActive ? "bg-gray-800 border-gray-700" : "bg-gray-700 border-gray-600"} text-white hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 hover:border-green-400/50 transition-all duration-300 ease-out cursor-pointer group`}
-                    >
-                      <CardContent className="p-6 sm:p-8">
-                        <div className="flex items-start gap-4 mb-6">
-                          <img
-                            src={testimonial.image || "/placeholder.svg"}
-                            alt={testimonial.name}
-                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover group-hover:scale-110 group-hover:ring-2 group-hover:ring-green-400/50 transition-all duration-300"
-                          />
-                          <div>
-                            <h4 className="font-semibold text-white group-hover:text-green-300 transition-colors duration-300 text-sm sm:text-base">
-                              {testimonial.name}
-                            </h4>
-                            <p className="text-xs sm:text-sm text-gray-300 group-hover:text-gray-200 transition-colors duration-300">
-                              {testimonial.role}
-                            </p>
-                          </div>
-                        </div>
-                        <blockquote className="text-sm sm:text-lg leading-relaxed group-hover:text-gray-100 transition-colors duration-300">
-                          "{testimonial.quote}"
-                        </blockquote>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="flex justify-center gap-2 mt-6 sm:mt-8">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentTestimonial(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-150 hover:shadow-lg hover:shadow-green-400/50 ${
-                  index === currentTestimonial ? "bg-green-400 w-6 sm:w-8" : "bg-gray-600 hover:bg-green-500"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+    <div
+      className="relative w-full overflow-hidden bg-muted/30 rounded-2xl border border-gray-800"
+      style={{ height: 600 }}
+    >
+      {testimonialsList.map((testimonial, index) => {
+        const position =
+          testimonialsList.length % 2 ? index - (testimonialsList.length + 1) / 2 : index - testimonialsList.length / 2
+        return (
+          <TestimonialCard
+            key={testimonial.tempId}
+            testimonial={testimonial}
+            handleMove={handleMove}
+            position={position}
+            cardSize={cardSize}
+          />
+        )
+      })}
+      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+        <button
+          onClick={() => handleMove(-1)}
+          className={cn(
+            "flex h-14 w-14 items-center justify-center text-2xl rounded-md",
+            "bg-black border-2 border-gray-700",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+          )}
+          aria-label="Previous testimonial"
+        >
+          <ChevronLeft className="text-white" />
+        </button>
+        <button
+          onClick={() => handleMove(1)}
+          className={cn(
+            "flex h-14 w-14 items-center justify-center text-2xl rounded-md",
+            "bg-black border-2 border-gray-700",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+          )}
+          aria-label="Next testimonial"
+        >
+          <ChevronRight className="text-white" />
+        </button>
       </div>
-    </section>
+    </div>
   )
 }
