@@ -26,6 +26,7 @@ import {
   ChevronLeft, ChevronRight,
   Droplets,
   QrCode,
+  Calendar,
 } from "lucide-react"
 import {
   LineChart,
@@ -741,9 +742,10 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   className="w-full justify-start border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white"
+                  onClick={() => router.push('/dashboard/donor/calendar-integration')}
                 >
-                  <Users className="h-5 w-5 mr-3" />
-                  View Receivers
+                  <Calendar className="h-5 w-5 mr-3" />
+                  Calendar Integration
                 </Button>
                 <Button
                   variant="outline"

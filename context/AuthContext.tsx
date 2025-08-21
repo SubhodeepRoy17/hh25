@@ -105,6 +105,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+export const authFetch = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('authToken');
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+
+  return fetch(url, {
+    ...options,
+    headers
+  });
+};
+
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) {

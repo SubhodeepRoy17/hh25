@@ -10,7 +10,7 @@ import mongoose from 'mongoose'
 interface NotificationData {
   userId: any;
   listingId?: any;
-  type: "new_listing" | "claim" | "expiring_soon" | "completed";
+  type: "new_listing" | "claim" | "expiring_soon" | "completed" | "event_reminder";
   message: string;
   urgent: boolean;
   metadata?: Record<string, any>; // Use Record<string, any> for flexibility
@@ -242,6 +242,39 @@ export async function notifyCompleted(listingId: string, verifiedBy: string) {
     return created;
   } catch (error) {
     console.error('Error in notifyCompleted:', error);
+  }
+}
+
+export async function createEventReminder(
+  userId: string,
+  eventId: string,
+  eventTitle: string,
+  reminderTime: Date,
+  location?: string
+): Promise<any> {
+  try {
+    const notificationData: NotificationData = {
+      userId: new mongoose.Types.ObjectId(userId),
+      type: "event_reminder",
+      message: `Remember to log food after your event: ${eventTitle}`,
+      urgent: true,
+      metadata: {
+        eventId,
+        eventTitle,
+        reminderTime: reminderTime.toISOString(),
+        location,
+        isEventReminder: true
+      }
+    };
+
+    const notification = await NotificationModel.create(notificationData);
+    await sendPushNotification(notification);
+    
+    console.log('Event reminder created successfully');
+    return notification;
+  } catch (error) {
+    console.error('Error creating event reminder:', error);
+    throw error;
   }
 }
 

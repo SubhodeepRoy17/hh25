@@ -3,32 +3,10 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { ToasterProvider } from "@/components/toaster-provider"
 import { AuthProvider } from "@/context/AuthContext"
+import { CalendarProvider } from '@/context/CalendarContext';
 import { NotificationsProvider } from "@/context/NotificationsContext"
 import './globals.css'
 import Script from 'next/script'
-import { startExpirationChecker } from '@/lib/services/expirationChecker'
-
-// Start the expiration checker when the app loads
-if (typeof window !== 'undefined') {
-  // Client-side only - start the expiration checker
-  console.log('Starting expiration checker...');
-  
-  // Run immediately on startup
-  setTimeout(() => {
-    import('@/lib/services/expirationChecker').then(({ checkExpiringListings, expireOldListings }) => {
-      checkExpiringListings();
-      expireOldListings();
-    });
-  }, 5000); // Wait 5 seconds after app loads
-  
-  // Set up interval for regular checks (every 30 minutes)
-  setInterval(() => {
-    import('@/lib/services/expirationChecker').then(({ checkExpiringListings, expireOldListings }) => {
-      checkExpiringListings();
-      expireOldListings();
-    });
-  }, 30 * 60 * 1000); // 30 minutes
-}
 
 export const metadata: Metadata = {
   title: 'CommunityBite - Food Sharing Platform',
@@ -89,100 +67,102 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background antialiased">
         <AuthProvider>
-          <NotificationsProvider>
-            <ToasterProvider />
-            {children}
-            
-            <Script 
-              id="expiration-checker" 
-              strategy="afterInteractive"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  // Start expiration checker after app loads
-                  setTimeout(() => {
-                    console.log('Starting expiration checker...');
-                    fetch('/api/listings/check-expirations', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      }
-                    }).catch(err => console.log('Expiration check request failed:', err));
-                  }, 5000);
-                  
-                  // Set up interval for regular checks (every 30 minutes)
-                  setInterval(() => {
-                    fetch('/api/listings/check-expirations', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      }
-                    }).catch(err => console.log('Expiration check request failed:', err));
-                  }, 30 * 60 * 1000);
-                `
-              }}
-            />
-            
-            <Script id="sw-registration" strategy="afterInteractive">
-              {`
-                if ('serviceWorker' in navigator) {
-                  const registerSw = async () => {
-                    try {
-                      const registration = await navigator.serviceWorker.register('/sw.js', {
-                        scope: '/',
-                        type: 'classic'
-                      });
-                      
-                      console.log('SW registered: ', registration);
-                      
-                      setInterval(() => {
-                        registration.update().catch(err => {
-                          console.log('SW update error: ', err);
+          <CalendarProvider>
+            <NotificationsProvider>
+              <ToasterProvider />
+              {children}
+              
+              <Script 
+                id="expiration-checker" 
+                strategy="afterInteractive"
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    // Start expiration checker after app loads
+                    setTimeout(() => {
+                      console.log('Starting expiration checker...');
+                      fetch('/api/listings/check-expirations', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        }
+                      }).catch(err => console.log('Expiration check request failed:', err));
+                    }, 5000);
+                    
+                    // Set up interval for regular checks (every 30 minutes)
+                    setInterval(() => {
+                      fetch('/api/listings/check-expirations', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        }
+                      }).catch(err => console.log('Expiration check request failed:', err));
+                    }, 30 * 60 * 1000);
+                  `
+                }}
+              />
+              
+              <Script id="sw-registration" strategy="afterInteractive">
+                {`
+                  if ('serviceWorker' in navigator) {
+                    const registerSw = async () => {
+                      try {
+                        const registration = await navigator.serviceWorker.register('/sw.js', {
+                          scope: '/',
+                          type: 'classic'
                         });
-                      }, 60 * 60 * 1000);
-                      
-                      if ('PushManager' in window) {
-                        const permission = await Notification.requestPermission();
-                        if (permission === 'granted') {
-                          const subscription = await registration.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: '${process.env.NEXT_PUBLIC_VAPID_KEY}'
+                        
+                        console.log('SW registered: ', registration);
+                        
+                        setInterval(() => {
+                          registration.update().catch(err => {
+                            console.log('SW update error: ', err);
                           });
-                          
-                          // Only try to subscribe if user is authenticated
-                          const token = localStorage.getItem('authToken');
-                          if (token) {
-                            await fetch('/api/push/subscribe', {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': \`Bearer \${token}\`
-                              },
-                              body: JSON.stringify(subscription)
-                            }).catch(err => console.log('Push subscription failed:', err));
+                        }, 60 * 60 * 1000);
+                        
+                        if ('PushManager' in window) {
+                          const permission = await Notification.requestPermission();
+                          if (permission === 'granted') {
+                            const subscription = await registration.pushManager.subscribe({
+                              userVisibleOnly: true,
+                              applicationServerKey: '${process.env.NEXT_PUBLIC_VAPID_KEY}'
+                            });
+                            
+                            // Only try to subscribe if user is authenticated
+                            const token = localStorage.getItem('authToken');
+                            if (token) {
+                              await fetch('/api/push/subscribe', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': \`Bearer \${token}\`
+                                },
+                                body: JSON.stringify(subscription)
+                              }).catch(err => console.log('Push subscription failed:', err));
+                            }
                           }
                         }
-                      }
-                    } catch (error) {
-                      console.error('SW registration failed: ', error);
-                    }
-                  };
-                  
-                  window.addEventListener('load', registerSw);
-                  
-                  // Re-register when auth state changes
-                  if (typeof window !== 'undefined') {
-                    const originalSetItem = localStorage.setItem;
-                    localStorage.setItem = function(key, value) {
-                      originalSetItem.apply(this, arguments);
-                      if (key === 'authToken' && value) {
-                        setTimeout(registerSw, 1000);
+                      } catch (error) {
+                        console.error('SW registration failed: ', error);
                       }
                     };
+                    
+                    window.addEventListener('load', registerSw);
+                    
+                    // Re-register when auth state changes
+                    if (typeof window !== 'undefined') {
+                      const originalSetItem = localStorage.setItem;
+                      localStorage.setItem = function(key, value) {
+                        originalSetItem.apply(this, arguments);
+                        if (key === 'authToken' && value) {
+                          setTimeout(registerSw, 1000);
+                        }
+                      };
+                    }
                   }
-                }
-              `}
-            </Script>
-          </NotificationsProvider>
+                `}
+              </Script>
+            </NotificationsProvider>
+          </CalendarProvider>
         </AuthProvider>
       </body>
     </html>

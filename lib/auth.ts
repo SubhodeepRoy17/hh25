@@ -110,15 +110,21 @@ export const verifyToken = (token: string, isWebSocket = false): DecodedToken =>
 
 // Utility function to extract token from headers
 export const extractTokenFromHeaders = (headers: Headers | Record<string, string>): string | null => {
-  const authHeader = headers instanceof Headers 
-    ? headers.get('authorization') 
-    : headers['authorization']
+  let authHeader: string | null;
+  
+  if (headers instanceof Headers) {
+    authHeader = headers.get('authorization');
+  } else if (typeof headers === 'object' && headers !== null) {
+    authHeader = headers['authorization'] || headers['Authorization'];
+  } else {
+    return null;
+  }
   
   if (!authHeader?.startsWith('Bearer ')) {
-    return null
+    return null;
   }
-  return authHeader.split(' ')[1]
-}
+  return authHeader.split(' ')[1];
+};
 
 // WebSocket specific authentication
 export const authenticateWebSocket = (token: string): DecodedToken => {

@@ -1,7 +1,7 @@
 //lib/models/Notification.ts
 import mongoose from 'mongoose'
 
-export type NotificationType = "new_listing" | "claim" | "expiring_soon" | "completed"
+export type NotificationType = "new_listing" | "claim" | "expiring_soon" | "completed" | "event_reminder";
 
 export interface INotification extends mongoose.Document {
   userId: mongoose.Schema.Types.ObjectId

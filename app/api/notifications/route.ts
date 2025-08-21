@@ -14,7 +14,7 @@ import ReceiverModel from '@/lib/models/Receiver'
 interface NotificationData {
   userId: any;
   listingId?: any;
-  type: "new_listing" | "claim" | "expiring_soon" | "completed";
+  type: "new_listing" | "claim" | "expiring_soon" | "completed" | "event_reminder";
   message: string;
   urgent: boolean;
   metadata?: Record<string, any>;
@@ -279,13 +279,14 @@ async function sendPushNotification(notification: any) {
   }
 }
 
-function getNotificationTitle(type: NotificationType) {
+function getNotificationTitle(type: string) {
   switch (type) {
-    case "new_listing": return "New Food Available"
-    case "claim": return "Claim Update"
-    case "expiring_soon": return "Expiring Soon"
-    case "completed": return "Pickup Completed"
-    default: return "New Notification"
+    case "new_listing": return "New Food Available";
+    case "claim": return "Claim Update";
+    case "expiring_soon": return "Expiring Soon";
+    case "completed": return "Pickup Completed";
+    case "event_reminder": return "Event Reminder";
+    default: return "New Notification";
   }
 }
 

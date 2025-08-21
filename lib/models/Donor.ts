@@ -8,6 +8,15 @@ export interface IDonor extends Document {
   orgType: 'canteen' | 'event';
   phone: string;
   campusEmail: string;
+  calendarIntegration?: {
+    enabled: boolean;
+    accessToken?: string;
+    refreshToken?: string;
+    expiryDate?: Date;
+    lastSynced?: Date;
+    webhookId?: string;
+    resourceId?: string;
+  };
 }
 
 const DonorSchema: Schema = new Schema({
@@ -16,6 +25,15 @@ const DonorSchema: Schema = new Schema({
   orgType: { type: String, enum: ['canteen', 'event'], required: true },
   phone: { type: String, required: true },
   campusEmail: { type: String, required: true, unique: true },
+  calendarIntegration: {
+    enabled: { type: Boolean, default: false },
+    accessToken: { type: String },
+    refreshToken: { type: String },
+    expiryDate: { type: Date },
+    lastSynced: { type: Date },
+    webhookId: { type: String },
+    resourceId: { type: String }
+  }
 }, { timestamps: true });
 
 export default mongoose.models.Donor || mongoose.model<IDonor>('Donor', DonorSchema);
