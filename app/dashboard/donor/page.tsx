@@ -326,10 +326,10 @@ export default function DashboardPage() {
 
   if (loading.stats && loading.listings) {
     return (
-      <main className="min-h-screen bg-gray-950 text-gray-100">
+      <main className="min-h-screen bg-slate-900 text-gray-100">
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-pulse text-gray-400">Loading dashboard...</div>
+            <div className="animate-pulse text-slate-400">Loading dashboard...</div>
           </div>
         </div>
       </main>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
 
   if (error.stats) {
     return (
-      <main className="min-h-screen bg-gray-950 text-gray-100">
+      <main className="min-h-screen bg-slate-900 text-gray-100">
         <div className="container mx-auto px-4 py-8">
           <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 text-red-200">
             <AlertCircle className="h-5 w-5 inline mr-2" />
@@ -350,21 +350,23 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-gray-100">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-gray-400 mt-1">Track your food rescue impact and manage listings</p>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-slate-400 mt-1">Track your food rescue impact and manage listings</p>
           </div>
           <div className="flex gap-3">
             {unreadCount > 0 && (
               <Link href="/dashboard/donor/notifications">
-                <Button variant="outline" className="relative border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300">
+                <Button variant="outline" className="relative border-emerald-500/40 bg-emerald-500/10 backdrop-blur-sm hover:bg-emerald-500/20 text-emerald-300 hover:text-white transition-all duration-200">
                   <Bell className="h-5 w-5 mr-2" />
                   Notifications
-                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-xs">
+                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 flex items-center justify-center text-xs font-medium shadow-lg">
                     {unreadCount}
                   </span>
                 </Button>
@@ -373,7 +375,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => setQrScannerOpen(true)}
               variant="outline"
-              className="border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300"
+              className="border-blue-500/40 bg-blue-500/10 backdrop-blur-sm hover:bg-blue-500/20 text-blue-300 hover:text-white transition-all duration-200"
             >
               <QrCode className="h-5 w-5 mr-2" />
               Scan QR
@@ -385,10 +387,17 @@ export default function DashboardPage() {
                 router.push('/auth/login');
               }}
               variant="outline"
-              className="border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300"
+              className="border-red-500/40 bg-red-500/10 backdrop-blur-sm hover:bg-red-500/20 text-red-300 hover:text-white transition-all duration-200"
             >
               <LogOut className="h-5 w-5 mr-2" />
               Logout
+            </Button>
+            <Button
+              onClick={handleListFood}
+              className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg hover:shadow-emerald-500/25 transition-all duration-200"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              List Food
             </Button>
           </div>
         </div>
@@ -431,7 +440,7 @@ export default function DashboardPage() {
           {/* Left Column */}
           <div className="space-y-6">
             {/* Impact Chart */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
@@ -444,10 +453,10 @@ export default function DashboardPage() {
                         key={range}
                         onClick={() => handleTimeRangeChange(range)}
                         className={cn(
-                          "px-3 py-1 rounded-md text-sm transition-colors",
+                          "px-3 py-1 rounded-md text-sm transition-all duration-200",
                           timeRange === range
-                            ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/30"
-                            : "text-gray-400 hover:text-gray-200",
+                            ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/40 shadow-lg"
+                            : "text-slate-400 hover:text-white hover:bg-slate-700/50",
                         )}
                       >
                         {range.charAt(0).toUpperCase() + range.slice(1)}
@@ -459,7 +468,7 @@ export default function DashboardPage() {
               <CardContent className="space-y-6">
                 {loading.analytics ? (
                   <div className="h-64 flex items-center justify-center">
-                    <div className="animate-pulse text-gray-400">Loading analytics...</div>
+                    <div className="animate-pulse text-slate-400">Loading analytics...</div>
                   </div>
                 ) : error.analytics ? (
                   <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 text-red-200">
@@ -475,24 +484,24 @@ export default function DashboardPage() {
                           data={analytics.timeline}
                           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                           <XAxis 
                             dataKey="date" 
-                            stroke="#9CA3AF"
+                            stroke="#94A3B8"
                             tick={{ fontSize: 12 }}
                           />
                           <YAxis 
-                            stroke="#9CA3AF"
+                            stroke="#94A3B8"
                             tick={{ fontSize: 12 }}
                           />
                           <Tooltip 
                             contentStyle={{ 
-                              backgroundColor: '#1F2937',
-                              borderColor: '#374151',
+                              backgroundColor: '#1E293B',
+                              borderColor: '#475569',
                               borderRadius: '0.5rem',
                             }}
-                            itemStyle={{ color: '#E5E7EB' }}
-                            labelStyle={{ color: '#9CA3AF', fontWeight: 'bold' }}
+                            itemStyle={{ color: '#F1F5F9' }}
+                            labelStyle={{ color: '#94A3B8', fontWeight: 'bold' }}
                           />
                           <Legend />
                           <Area
@@ -517,7 +526,7 @@ export default function DashboardPage() {
 
                     {/* Environmental Impact Metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+                      <div className="p-4 rounded-lg bg-slate-700/30 backdrop-blur-sm border border-slate-600/50">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-300">
                             <Leaf className="h-5 w-5" />
@@ -528,13 +537,13 @@ export default function DashboardPage() {
                           <p className="text-2xl font-bold text-emerald-400">
                             {Math.round(analytics.impactSummary.totalCO2Saved / 100) / 10} tons CO₂
                           </p>
-                          <p className="text-sm text-gray-400">
+                          <p className="text-sm text-slate-400">
                             Equivalent to {analytics.impactSummary.equivalentCarMiles} car miles
                           </p>
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+                      <div className="p-4 rounded-lg bg-slate-700/30 backdrop-blur-sm border border-slate-600/50">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 rounded-full bg-blue-500/20 text-blue-300">
                             <Droplets className="h-5 w-5" />
@@ -545,7 +554,7 @@ export default function DashboardPage() {
                           <p className="text-2xl font-bold text-blue-400">
                             {Math.round(analytics.impactSummary.totalWaterSaved / 1000)} m³
                           </p>
-                          <p className="text-sm text-gray-400">
+                          <p className="text-sm text-slate-400">
                             Equivalent to {analytics.impactSummary.equivalentShowers} showers
                           </p>
                         </div>
@@ -554,34 +563,34 @@ export default function DashboardPage() {
 
                     {/* Additional Metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-3 rounded-lg bg-gray-800/20 border border-gray-700">
-                        <p className="text-sm text-gray-400">Completion Rate</p>
+                      <div className="p-3 rounded-lg bg-slate-700/20 backdrop-blur-sm border border-slate-600/30">
+                        <p className="text-sm text-slate-400">Completion Rate</p>
                         <p className="text-xl font-bold">
                           {Math.round(analytics.completionRate)}%
                         </p>
                       </div>
-                      <div className="p-3 rounded-lg bg-gray-800/20 border border-gray-700">
-                        <p className="text-sm text-gray-400">Avg Response Time</p>
+                      <div className="p-3 rounded-lg bg-slate-700/20 backdrop-blur-sm border border-slate-600/30">
+                        <p className="text-sm text-slate-400">Avg Response Time</p>
                         <p className="text-xl font-bold">
                           {analytics.responseTimes.average}m
                           <span className={cn(
                             "ml-2 text-xs",
                             analytics.responseTimes.trend === 'improving' ? 'text-emerald-400' : 
-                            analytics.responseTimes.trend === 'declining' ? 'text-red-400' : 'text-gray-400'
+                            analytics.responseTimes.trend === 'declining' ? 'text-red-400' : 'text-slate-400'
                           )}>
                             {analytics.responseTimes.trend === 'improving' ? '↓ Improving' : 
                              analytics.responseTimes.trend === 'declining' ? '↑ Declining' : '→ Stable'}
                           </span>
                         </p>
                       </div>
-                      <div className="p-3 rounded-lg bg-gray-800/20 border border-gray-700">
-                        <p className="text-sm text-gray-400">Food Types</p>
+                      <div className="p-3 rounded-lg bg-slate-700/20 backdrop-blur-sm border border-slate-600/30">
+                        <p className="text-sm text-slate-400">Food Types</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {analytics.foodTypeDistribution.map((item) => (
                             <Badge 
                               key={item.type}
                               variant="outline"
-                              className="text-xs text-gray-300 border-gray-600"
+                              className="text-xs text-slate-300 border-slate-500"
                             >
                               {item.type}: {item.percentage}%
                             </Badge>
@@ -595,7 +604,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* Recent Listings */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-emerald-400" />
@@ -617,7 +626,7 @@ export default function DashboardPage() {
                   </div>
                 ) : loading.listings ? (
                   <div className="flex justify-center items-center h-32">
-                    <div className="animate-pulse text-gray-400">Loading listings...</div>
+                    <div className="animate-pulse text-slate-400">Loading listings...</div>
                   </div>
                 ) : recentListings.length > 0 ? (
                   <div className="flex flex-col">
@@ -626,7 +635,7 @@ export default function DashboardPage() {
                       {recentListings.slice(currentIndex, currentIndex + 2).map((listing) =>  (
                         <div
                           key={listing._id}
-                          className="rounded-lg border border-gray-800 bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
+                          className="rounded-lg border border-slate-700/50 bg-slate-700/30 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200 shadow-lg hover:shadow-xl"
                         >
                           {/* Image Section */}
                           <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
@@ -637,8 +646,8 @@ export default function DashboardPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                                <Package className="h-16 w-16 text-gray-500" />
+                              <div className="w-full h-full bg-slate-700 flex items-center justify-center">
+                                <Package className="h-16 w-16 text-slate-500" />
                               </div>
                             )}
                           </div>
@@ -650,15 +659,15 @@ export default function DashboardPage() {
                               <Badge
                                 className={cn(
                                   "text-xs",
-                                  listing.status === "published" && "bg-emerald-500/20 text-emerald-100 border-emerald-500/30",
-                                  listing.status === "claimed" && "bg-purple-500/20 text-purple-100 border-purple-500/30",
-                                  listing.status === "completed" && "bg-blue-500/20 text-blue-100 border-blue-500/30",
+                                  listing.status === "published" && "bg-emerald-500/20 text-emerald-100 border-emerald-500/40",
+                                  listing.status === "claimed" && "bg-blue-500/20 text-blue-100 border-blue-500/40",
+                                  listing.status === "completed" && "bg-orange-500/20 text-orange-100 border-orange-500/40",
                                 )}
                               >
                                 {listing.status}
                               </Badge>
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
                               {listing.types.map(type => getFoodTypeBadge(type))}
                               <span className="flex items-center gap-1">
                                 {getFreshnessIcon(listing.freshness)}
@@ -689,7 +698,7 @@ export default function DashboardPage() {
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white"
+                          className="border-emerald-500/40 bg-emerald-500/10 backdrop-blur-sm hover:bg-emerald-500/20 text-emerald-300 hover:text-white transition-all duration-200"
                           onClick={() => setCurrentIndex(prev => Math.max(prev - 2, 0))}
                           disabled={currentIndex === 0}
                         >
@@ -698,7 +707,7 @@ export default function DashboardPage() {
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white"
+                          className="border-emerald-500/40 bg-emerald-500/10 backdrop-blur-sm hover:bg-emerald-500/20 text-emerald-300 hover:text-white transition-all duration-200"
                           onClick={() => setCurrentIndex(prev => Math.min(prev + 2, recentListings.length - 2))}
                           disabled={currentIndex >= recentListings.length - 2}
                         >
@@ -708,12 +717,12 @@ export default function DashboardPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <Package className="h-10 w-10 mx-auto mb-4 text-gray-500" />
+                  <div className="text-center py-8 text-slate-400">
+                    <Package className="h-10 w-10 mx-auto mb-4 text-slate-500" />
                     <p>No recent listings found</p>
                     <Button
                       onClick={handleListFood}
-                      className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="mt-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg hover:shadow-emerald-500/25 transition-all duration-200"
                     >
                       Create your first listing
                     </Button>
@@ -726,14 +735,14 @@ export default function DashboardPage() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
                   onClick={handleListFood}
-                  className="w-full justify-start bg-emerald-600 hover:bg-emerald-500 text-white"
+                  className="w-full justify-start bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg hover:shadow-emerald-500/25 transition-all duration-200"
                   size="lg"
                 >
                   <Plus className="h-5 w-5 mr-3" />
@@ -741,7 +750,7 @@ export default function DashboardPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white"
+                  className="w-full justify-start border-slate-600/50 bg-slate-700/30 backdrop-blur-sm text-slate-200 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
                   onClick={() => router.push('/dashboard/donor/calendar-integration')}
                 >
                   <Calendar className="h-5 w-5 mr-3" />
@@ -749,7 +758,7 @@ export default function DashboardPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white"
+                  className="w-full justify-start border-slate-600/50 bg-slate-700/30 backdrop-blur-sm text-slate-200 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
                 >
                   <TrendingUp className="h-5 w-5 mr-3" />
                   Impact Report
@@ -758,20 +767,20 @@ export default function DashboardPage() {
             </Card>
 
             {/* Updated Notifications Card */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-emerald-400" />
                     Notifications
                     {unreadCount > 0 && (
-                      <Badge className="ml-2 bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                      <Badge className="ml-2 bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
                         {unreadCount} new
                       </Badge>
                     )}
                   </CardTitle>
                   <Link href="/dashboard/donor/notifications">
-                    <Button variant="ghost" size="sm" className="text-emerald-400 hover:text-emerald-300">
+                    <Button variant="ghost" size="sm" className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
                       View All
                     </Button>
                   </Link>
@@ -786,7 +795,7 @@ export default function DashboardPage() {
                     />
                   ))}
                   {notifications.length === 0 && (
-                    <div className="text-center py-4 text-gray-400">
+                    <div className="text-center py-4 text-slate-400">
                       <Bell className="h-6 w-6 mx-auto mb-2" />
                       <p>No notifications yet</p>
                     </div>
@@ -797,25 +806,25 @@ export default function DashboardPage() {
 
             {/* Performance Metrics */}
             {stats && (
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
                 <CardHeader>
                   <CardTitle>Performance</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Active Listings</span>
+                    <span className="text-sm text-slate-300">Active Listings</span>
                     <span className="font-semibold text-emerald-400">{stats.activeListings}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Completed Pickups</span>
+                    <span className="text-sm text-slate-300">Completed Pickups</span>
                     <span className="font-semibold text-emerald-400">{stats.completedPickups}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Avg Response Time</span>
+                    <span className="text-sm text-slate-300">Avg Response Time</span>
                     <span className="font-semibold text-emerald-400">{stats.avgResponseTime}m</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Success Rate</span>
+                    <span className="text-sm text-slate-300">Success Rate</span>
                     <span className="font-semibold text-emerald-400">94%</span>
                   </div>
                 </CardContent>
@@ -847,7 +856,7 @@ function StatsCard({
   trend: "up" | "down"
 }) {
   return (
-    <Card className="bg-gray-900 border-gray-800 hover:border-emerald-500/30 transition-colors">
+    <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:border-emerald-500/40 transition-all duration-200 shadow-lg hover:shadow-xl">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="text-emerald-400">{icon}</div>
@@ -863,7 +872,7 @@ function StatsCard({
         </div>
         <div className="mt-4">
           <h3 className="text-2xl font-bold">{value}</h3>
-          <p className="text-sm text-gray-400">{title}</p>
+          <p className="text-sm text-slate-400">{title}</p>
         </div>
       </CardContent>
     </Card>
@@ -889,11 +898,11 @@ function NotificationItem({ notification }: { notification: Notification }) {
   return (
     <div
       className={cn(
-        "p-3 rounded-lg border cursor-pointer transition-colors",
+        "p-3 rounded-lg border cursor-pointer transition-all duration-200 backdrop-blur-sm",
         !notification.read 
-          ? "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
-          : "border-gray-800 bg-gray-800/30 hover:bg-gray-800/50",
-        notification.urgent && "border-yellow-500/30 bg-yellow-500/10"
+          ? "border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20"
+          : "border-slate-700/50 bg-slate-700/30 hover:bg-slate-700/50",
+        notification.urgent && "border-orange-500/40 bg-orange-500/10"
       )}
       onClick={() => markAsRead(notification._id)}
     >
@@ -902,7 +911,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
           className={cn(
             "p-1 rounded-full",
             notification.type === "pickup" && "bg-emerald-500/20 text-emerald-300",
-            notification.type === "expiring" && "bg-yellow-500/20 text-yellow-300",
+            notification.type === "expiring" && "bg-orange-500/20 text-orange-300",
             notification.type === "completed" && "bg-blue-500/20 text-blue-300",
           )}
         >
@@ -912,11 +921,11 @@ function NotificationItem({ notification }: { notification: Notification }) {
           <p className={cn(
             "text-sm",
             !notification.read && "font-medium text-white",
-            notification.read && "text-gray-300"
+            notification.read && "text-slate-300"
           )}>
             {notification.message}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             {new Date(notification.createdAt).toLocaleString()}
           </p>
         </div>
