@@ -1,3 +1,4 @@
+//app/api/listings/verify-pickup/route.ts
 import { NextResponse } from 'next/server';
 import FoodListing from '@/lib/models/FoodListing';
 import connectDB from '@/lib/db';
@@ -27,21 +28,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const { qrCode, listingId } = await request.json();
-    
-    if (!qrCode || !listingId) {
+    // Only donors should be able to verify pickups
+    if (decoded.role !== 'donor') {
       return NextResponse.json(
-        { error: 'QR code and listing ID are required' },
+        { error: 'Only donors can verify pickups' },
+        { status: 403 }
+      );
+    }
+
+    const { qrCode } = await request.json();
+    
+    if (!qrCode) {
+      return NextResponse.json(
+        { error: 'QR code is required' },
         { status: 400 }
       );
     }
 
     // Find the listing with the matching QR code
     const listing = await FoodListing.findOne({
-      _id: listingId,
       'qrCodeData.code': qrCode,
       status: 'claimed'
-    });
+    }).populate('createdBy', 'name');
 
     if (!listing) {
       return NextResponse.json(
@@ -75,10 +83,14 @@ export async function POST(request: Request) {
     await listing.save();
 
     // Send completion notifications
-    await notifyCompleted(listingId, decoded.userId);
+    await notifyCompleted(listing._id.toString(), listing.claimedBy?.toString());
 
-    // Calculate tokens earned (simplified)
-    const tokensEarned = Math.floor(listing.quantity * (listing.unit === 'meals' ? 2 : 3));
+    // Calculate tokens earned based on quantity and unit
+    const tokensEarned = Math.floor(
+      listing.quantity * (listing.unit === 'meals' ? 2 : 
+                         listing.unit === 'kg' ? 5 : 
+                         listing.unit === 'trays' ? 3 : 4) // boxes
+    );
 
     return NextResponse.json({
       success: true,
@@ -87,7 +99,8 @@ export async function POST(request: Request) {
       listing: {
         id: listing._id,
         title: listing.title,
-        status: listing.status
+        status: listing.status,
+        donorName: (listing.createdBy as any).name
       }
     });
 

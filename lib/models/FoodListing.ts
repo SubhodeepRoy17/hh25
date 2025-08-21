@@ -1,3 +1,4 @@
+//lib/models/FoodListing.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export type FoodType = 'cooked' | 'produce' | 'bakery' | 'packaged' | 'beverages' | 'mixed' | 'vegetarian' | 'vegan';
@@ -104,7 +105,8 @@ const LocationSchema = new Schema<Location>({
 const QRCodeDataSchema = new Schema<QRCodeData>({
   code: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   generatedAt: {
     type: Date,
@@ -293,6 +295,7 @@ FoodListingSchema.index({ 'location.geoPoint': '2dsphere' });
 FoodListingSchema.index({ status: 1, availableUntil: 1 });
 FoodListingSchema.index({ createdBy: 1, status: 1 });
 FoodListingSchema.index({ claimedBy: 1, status: 1 });
+FoodListingSchema.index({ 'qrCodeData.code': 1 }); // Index for QR code lookup
 FoodListingSchema.index({ title: 'text', 'location.address': 'text', instructions: 'text' });
 
 // Virtuals

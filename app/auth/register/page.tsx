@@ -10,7 +10,7 @@ import { ShieldCheck, QrCode, Smartphone } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import PasswordStrength from "@/components/auth/password-strength"
-import QrScannerModal from "@/components/auth/qr-scanner-modal"
+import QrScannerModal from "@/components/receiver/qr-scanner-modal"
 import { cn } from "@/lib/utils"
 
 type Role = "donor" | "receiver"

@@ -1,3 +1,4 @@
+//app/api/listings/[listingId]/claim/route.ts
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import FoodListing from '@/lib/models/FoodListing'
@@ -46,22 +47,29 @@ export async function POST(
       )
     }
 
-    // Check if listing is already claimed
-    const existingListing = await FoodListing.findById(params.listingId);
-    if (existingListing?.status === 'claimed') {
+    // Check if listing exists and is available
+    const existingListing = await FoodListing.findById(params.listingId)
+    if (!existingListing) {
       return NextResponse.json(
-        { error: 'This listing has already been claimed' },
+        { error: 'Listing not found' },
+        { status: 404 }
+      )
+    }
+
+    if (existingListing.status !== 'published') {
+      return NextResponse.json(
+        { error: 'This listing is not available for claiming' },
         { status: 409 }
-      );
+      )
     }
 
     // Generate QR code data
     const qrCodeData = {
-      code: Math.random().toString(36).substring(2, 10).toUpperCase(),
+      code: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       generatedAt: new Date(),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       verified: false
-    };
+    }
 
     // Update listing status
     const listing = await FoodListing.findByIdAndUpdate(
@@ -73,12 +81,12 @@ export async function POST(
         qrCodeData: qrCodeData
       },
       { new: true }
-    );
+    ).populate('createdBy', 'name')
 
     if (!listing) {
       return NextResponse.json(
-        { error: 'Listing not found' },
-        { status: 404 }
+        { error: 'Failed to update listing' },
+        { status: 500 }
       )
     }
 
@@ -91,7 +99,14 @@ export async function POST(
         id: listing._id,
         status: listing.status,
         claimedAt: listing.claimedAt,
-        qrCode: qrCodeData.code // Return QR code to frontend
+        qrCode: qrCodeData.code,
+        title: listing.title,
+        quantity: listing.quantity,
+        unit: listing.unit,
+        availableUntil: listing.availableUntil,
+        location: listing.location.address,
+        donorName: (listing.createdBy as any).name,
+        expiresAt: qrCodeData.expiresAt
       }
     })
 

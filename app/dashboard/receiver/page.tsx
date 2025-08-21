@@ -201,8 +201,7 @@ export default function ReceiverDashboardPage() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({}) // Add empty body if required
+        }
       })
 
       if (!response.ok) {
@@ -210,28 +209,18 @@ export default function ReceiverDashboardPage() {
         throw new Error(errorData.error || 'Failed to claim listing')
       }
 
+      const result = await response.json()
+      
+      // Redirect to success page with QR code
+      router.push(`/dashboard/receiver/claim-success?listingId=${listingId}`)
+
+      // Show success toast
       toast({
         title: "Success",
-        description: "Food claimed successfully!",
+        description: "Food claimed successfully! Redirecting to QR code...",
         variant: "default"
       })
 
-      // Refresh listings
-      const params = new URLSearchParams({
-        lat: userLocation.lat.toString(),
-        lng: userLocation.lng.toString(),
-        maxDistance: maxDistance.toString(),
-        vegOnly: vegOnly.toString(),
-        query: searchQuery
-      })
-
-      const res = await fetch(`/api/listings/available?${params.toString()}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      
-      if (res.ok) {
-        setListings((await res.json()).listings || [])
-      }
     } catch (err) {
       toast({
         title: "Error",

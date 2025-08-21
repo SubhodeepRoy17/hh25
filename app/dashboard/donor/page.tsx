@@ -1,7 +1,8 @@
+//app/dashboard/donor/page.tsx
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from 'next/link'
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +25,7 @@ import {
   LogOut,
   ChevronLeft, ChevronRight,
   Droplets,
+  QrCode,
 } from "lucide-react"
 import {
   LineChart,
@@ -43,6 +45,7 @@ import { cn } from "@/lib/utils"
 import { FoodType, Freshness, QuantityUnit } from "@/lib/models/FoodListing"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/hooks/useAuth"
+import QrScannerModal from "@/components/receiver/qr-scanner-modal"
 
 interface StatsData {
   totalMeals: number
@@ -112,6 +115,7 @@ export default function DashboardPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const { toast } = useToast()
   const { user } = useAuth()
+  const [qrScannerOpen, setQrScannerOpen] = useState(false)
 
   const [loading, setLoading] = useState({
     stats: true,
@@ -265,6 +269,49 @@ export default function DashboardPage() {
     )
   }
 
+  const fetchData = useCallback(async () => {
+    try {
+      // Fetch stats (now using real data)
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      // Fetch summary stats
+      const statsResponse = await fetch('/api/listings/stats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!statsResponse.ok) {
+        throw new Error(`HTTP error! status: ${statsResponse.status}`)
+      }
+
+      const statsData = await statsResponse.json()
+      setStats(statsData)
+
+      // Fetch analytics data
+      await fetchAnalyticsData(timeRange)
+
+      setLoading(prev => ({...prev, stats: false}))
+      setError(prev => ({...prev, stats: null}))
+    } catch (err) {
+      setError(prev => ({...prev, stats: err instanceof Error ? err.message : 'Failed to load stats'}))
+      setLoading(prev => ({...prev, stats: false}))
+    }
+
+    // Fetch listings
+    await fetchListings()
+  }, [timeRange, fetchAnalyticsData, fetchListings]);
+
+  const handleScanSuccess = (qrData: string) => {
+    // Refresh data after successful scan
+    fetchData();
+  };
+
   const getFreshnessIcon = (freshness: Freshness) => {
     const iconMap = {
       'fresh-hot': '🔥',
@@ -322,6 +369,14 @@ export default function DashboardPage() {
                 </Button>
               </Link>
             )}
+            <Button
+              onClick={() => setQrScannerOpen(true)}
+              variant="outline"
+              className="border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300"
+            >
+              <QrCode className="h-5 w-5 mr-2" />
+              Scan QR
+            </Button>
             <Button
               onClick={() => {
                 localStorage.removeItem('authToken');
@@ -773,6 +828,11 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        <QrScannerModal
+          open={qrScannerOpen}
+          onOpenChange={setQrScannerOpen}
+          onScanSuccess={handleScanSuccess}
+        />
       </div>
     </main>
   )
@@ -871,4 +931,8 @@ function NotificationItem({ notification }: { notification: Notification }) {
       </div>
     </div>
   )
+}
+
+function fetchData() {
+  throw new Error("Function not implemented.")
 }
