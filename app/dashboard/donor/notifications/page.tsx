@@ -1,4 +1,5 @@
 // app/dashboard/donor/notifications/page.tsx
+// app/dashboard/donor/notifications/page.tsx
 "use client"
 
 import { useNotifications } from '@/context/NotificationsContext'
@@ -86,28 +87,30 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Skeleton className="h-10 w-10 rounded-md" />
-          <Skeleton className="h-8 w-48 rounded-md" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
-          <div className="space-y-4">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </CardContent>
-            </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Skeleton className="h-10 w-10 rounded-md" />
+            <Skeleton className="h-8 w-48 rounded-md" />
           </div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full rounded-lg" />
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+            <div className="space-y-4">
+              <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            </div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-lg" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -115,133 +118,156 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <Link href="/dashboard/donor">
-          <Button variant="outline" size="icon" className="border-gray-700">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
-        {unreadCount > 0 && (
-          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-            {unreadCount} unread
-          </Badge>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-emerald-400" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button
-                  variant={filter === "all" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setFilter("all")}
-                >
-                  All Notifications
-                </Button>
-                <Button
-                  variant={filter === "unread" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setFilter("unread")}
-                >
-                  Unread Only
-                </Button>
-                <Button
-                  variant={filter === "urgent" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setFilter("urgent")}
-                >
-                  Urgent Only
-                </Button>
-                {unreadCount > 0 && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start mt-4 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
-                    onClick={handleMarkAllAsRead}
-                  >
-                    Mark All as Read
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Link href="/dashboard/donor">
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/50 backdrop-blur-sm"
+            >
+              <ChevronLeft className="h-5 w-5 text-white" />
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Notifications</h1>
+          {unreadCount > 0 && (
+            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 backdrop-blur-sm">
+              {unreadCount} unread
+            </Badge>
+          )}
         </div>
 
-        {/* Main Content */}
-        <div className="space-y-4">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-emerald-400" />
-                {filter === "all" && "All Notifications"}
-                {filter === "unread" && "Unread Notifications"}
-                {filter === "urgent" && "Urgent Notifications"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filteredNotifications.length > 0 ? (
-                <div className="space-y-3">
-                  {filteredNotifications.map((notification) => (
-                    <div
-                      key={notification._id}
-                      className={cn(
-                        "p-4 rounded-lg border transition-colors cursor-pointer",
-                        !notification.read && "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20",
-                        notification.read && "border-gray-800 bg-gray-800/30 hover:bg-gray-800/50",
-                        notification.urgent && "border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20"
-                      )}
-                      onClick={() => handleNotificationClick(notification._id)}
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Filter className="h-5 w-5 text-emerald-400" />
+                  Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button
+                    variant={filter === "all" ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start text-white",
+                      filter === "all"
+                        ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                        : "hover:bg-slate-700/50",
+                    )}
+                    onClick={() => setFilter("all")}
+                  >
+                    All Notifications
+                  </Button>
+                  <Button
+                    variant={filter === "unread" ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start text-white",
+                      filter === "unread"
+                        ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                        : "hover:bg-slate-700/50",
+                    )}
+                    onClick={() => setFilter("unread")}
+                  >
+                    Unread Only
+                  </Button>
+                  <Button
+                    variant={filter === "urgent" ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start text-white",
+                      filter === "urgent"
+                        ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                        : "hover:bg-slate-700/50",
+                    )}
+                    onClick={() => setFilter("urgent")}
+                  >
+                    Urgent Only
+                  </Button>
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start mt-4 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10 bg-emerald-500/5"
+                      onClick={handleMarkAllAsRead}
                     >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={cn(
-                            "p-2 rounded-full",
-                            notification.type === "expiring" && "bg-yellow-500/20 text-yellow-300",
-                            notification.type === "completed" && "bg-blue-500/20 text-blue-300", 
-                            notification.type === "new_listing" && "bg-purple-500/20 text-purple-300",
-                            notification.type === "claim" && "bg-red-500/20 text-red-300"
-                          )}
-                        >
-                          {getNotificationIcon(notification.type as NotificationType)}
-                        </div>
-                        <div className="flex-1">
-                          <p className={cn(
-                            "font-medium",
-                            !notification.read && "text-white",
-                            notification.read && "text-gray-300"
-                          )}>
-                            {notification.message}
-                          </p>
-                          <p className="text-sm text-gray-400 mt-1">
-                            {formatDate(notification.createdAt)}
-                          </p>
-                        </div>
-                        {!notification.read && (
-                          <span className="h-2 w-2 rounded-full bg-emerald-400 mt-2" />
+                      Mark All as Read
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="space-y-4">
+            <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Bell className="h-5 w-5 text-emerald-400" />
+                  {filter === "all" && "All Notifications"}
+                  {filter === "unread" && "Unread Notifications"}
+                  {filter === "urgent" && "Urgent Notifications"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {filteredNotifications.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredNotifications.map((notification) => (
+                      <div
+                        key={notification._id}
+                        className={cn(
+                          "p-4 rounded-lg border transition-all duration-200 cursor-pointer backdrop-blur-sm",
+                          !notification.read &&
+                            "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 shadow-lg shadow-emerald-500/10",
+                          notification.read && "border-slate-600/30 bg-slate-700/30 hover:bg-slate-700/50",
+                          notification.urgent &&
+                            "border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 shadow-lg shadow-orange-500/10",
                         )}
+                        onClick={() => handleNotificationClick(notification._id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={cn(
+                              "p-2 rounded-full backdrop-blur-sm",
+                              notification.type === "expiring" && "bg-orange-500/20 text-orange-300",
+                              notification.type === "completed" && "bg-blue-500/20 text-blue-300",
+                              notification.type === "new_listing" && "bg-emerald-500/20 text-emerald-300",
+                              notification.type === "claim" && "bg-red-500/20 text-red-300",
+                            )}
+                          >
+                            {getNotificationIcon(notification.type as NotificationType)}
+                          </div>
+                          <div className="flex-1">
+                            <p
+                              className={cn(
+                                "font-medium",
+                                !notification.read && "text-white",
+                                notification.read && "text-slate-300",
+                              )}
+                            >
+                              {notification.message}
+                            </p>
+                            <p className="text-sm text-slate-400 mt-1">{formatDate(notification.createdAt)}</p>
+                          </div>
+                          {!notification.read && (
+                            <span className="h-2 w-2 rounded-full bg-emerald-400 mt-2 shadow-sm shadow-emerald-400/50" />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-400">
-                  <Bell className="h-10 w-10 mx-auto mb-4" />
-                  <p>No notifications found</p>
-                  <p className="text-sm mt-1">You're all caught up!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-slate-400">
+                    <Bell className="h-10 w-10 mx-auto mb-4 text-slate-500" />
+                    <p className="text-slate-300">No notifications found</p>
+                    <p className="text-sm mt-1">You're all caught up!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
