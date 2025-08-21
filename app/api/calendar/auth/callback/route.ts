@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     } else {
       // Fallback: try to get user from session/token
       try {
-        const token = cookies().get('token')?.value;
+        const token = (await cookies()).get('token')?.value;
         if (token) {
           const decoded = verifyToken(token);
           userId = decoded.userId;

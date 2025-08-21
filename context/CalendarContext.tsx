@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useAuth } from '@/hooks/useAuth';
 
 interface CalendarEvent {
+  summary: string;
   id: string;
   title: string;
   start: Date;

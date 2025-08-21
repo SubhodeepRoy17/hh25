@@ -94,25 +94,50 @@ export default function CalendarIntegration() {
             </div>
 
             {events.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Upcoming Events</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {events.map((event) => (
-                    <div key={event.id} className="p-3 rounded-lg border bg-muted/50">
-                      <div className="font-medium text-sm">{event.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {event.start.toLocaleDateString()} • {event.start.toLocaleTimeString()}
-                      </div>
-                      {event.location && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          📍 {event.location}
+                <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Upcoming Events</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {events.map((event) => {
+                        // Handle Google Calendar API date format
+                        const getDateFromGoogleEvent = (dateObj: any): Date | null => {
+                        try {
+                            if (dateObj?.dateTime) return new Date(dateObj.dateTime);
+                            if (dateObj?.date) return new Date(dateObj.date);
+                            if (typeof dateObj === 'string') return new Date(dateObj);
+                            if (dateObj instanceof Date) return dateObj;
+                            return null;
+                        } catch {
+                            return null;
+                        }
+                        };
+
+                        const startDate = getDateFromGoogleEvent(event.start);
+                        const endDate = getDateFromGoogleEvent(event.end);
+                        
+                        const isValidStart = startDate && !isNaN(startDate.getTime());
+                        const isValidEnd = endDate && !isNaN(endDate.getTime());
+
+                        return (
+                        <div key={event.id} className="p-3 rounded-lg border bg-muted/50">
+                            <div className="font-medium text-sm">{event.summary || 'Untitled Event'}</div>
+                            <div className="text-xs text-muted-foreground">
+                            {isValidStart ? startDate.toLocaleDateString() : 'Date TBA'}
+                            {isValidStart && startDate.toLocaleTimeString && ` • ${startDate.toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })}`}
+                            </div>
+                            {event.location && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                                📍 {event.location}
+                            </div>
+                            )}
                         </div>
-                      )}
+                        );
+                    })}
                     </div>
-                  ))}
                 </div>
-              </div>
-            )}
+                )}
           </div>
         ) : (
           <Button
