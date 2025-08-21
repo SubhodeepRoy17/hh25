@@ -23,7 +23,22 @@ import {
   Package,
   LogOut,
   ChevronLeft, ChevronRight,
+  Droplets,
 } from "lucide-react"
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from 'recharts'
 import { cn } from "@/lib/utils"
 import { FoodType, Freshness, QuantityUnit } from "@/lib/models/FoodListing"
 import { useToast } from "@/components/ui/use-toast"
@@ -61,11 +76,38 @@ interface FoodListing {
   createdAt: Date
 }
 
+interface AnalyticsData {
+  timeline: {
+    date: string
+    meals: number
+    co2: number
+    water: number
+    people: number
+  }[]
+  impactSummary: {
+    totalCO2Saved: number // in kg
+    totalWaterSaved: number // in liters
+    equivalentCarMiles: number
+    equivalentShowers: number
+    equivalentEnergy: number // in kWh
+  }
+  foodTypeDistribution: {
+    type: FoodType
+    percentage: number
+  }[]
+  completionRate: number
+  responseTimes: {
+    average: number // in minutes
+    trend: 'improving' | 'declining' | 'stable'
+  }
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [timeRange, setTimeRange] = useState<"week" | "month" | "year">("month")
   const [stats, setStats] = useState<StatsData | null>(null)
   const [recentListings, setRecentListings] = useState<FoodListing[]>([])
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const { notifications, unreadCount } = useNotifications()
   const [currentIndex, setCurrentIndex] = useState(0)
   const { toast } = useToast()
@@ -73,10 +115,12 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState({
     stats: true,
+    analytics: true,
     listings: true
   })
   const [error, setError] = useState({
     stats: null as string | null,
+    analytics: null as string | null,
     listings: null as string | null
   })
 
@@ -119,21 +163,67 @@ export default function DashboardPage() {
     }
   }
 
+  const fetchAnalyticsData = async (range: "week" | "month" | "year") => {
+  try {
+    setLoading(prev => ({...prev, analytics: true}))
+    setError(prev => ({...prev, analytics: null}))
+
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`/api/analytics?range=${range}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setAnalytics(data)
+      setLoading(prev => ({...prev, analytics: false}))
+    } catch (err) {
+      setError(prev => ({...prev, analytics: err instanceof Error ? err.message : 'Failed to load analytics'}))
+      setLoading(prev => ({...prev, analytics: false}))
+      console.error('Error fetching analytics:', err)
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch stats (mock for now)
-        const mockStats = {
-          totalMeals: 2847,
-          totalWeight: 1423,
-          co2Saved: 3.2,
-          peopleFed: 1892,
-          activeListings: recentListings.length,
-          completedPickups: 156,
-          monthlyGrowth: 23.5,
-          avgResponseTime: 18,
+        // Fetch stats (now using real data)
+        const token = localStorage.getItem('authToken')
+        if (!token) {
+          throw new Error('No authentication token found')
         }
-        setStats(mockStats)
+
+        // Fetch summary stats
+        const statsResponse = await fetch('/api/listings/stats', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (!statsResponse.ok) {
+          throw new Error(`HTTP error! status: ${statsResponse.status}`)
+        }
+
+        const statsData = await statsResponse.json()
+        setStats(statsData)
+
+        // Fetch analytics data
+        await fetchAnalyticsData(timeRange)
+
         setLoading(prev => ({...prev, stats: false}))
         setError(prev => ({...prev, stats: null}))
       } catch (err) {
@@ -146,7 +236,12 @@ export default function DashboardPage() {
     }
 
     fetchData()
-  }, [])
+  }, [timeRange])
+
+  const handleTimeRangeChange = (range: "week" | "month" | "year") => {
+    setTimeRange(range)
+    fetchAnalyticsData(range)
+  }
 
   const handleListFood = () => {
     router.push("/dashboard/donor/list-food")
@@ -292,13 +387,13 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-emerald-400" />
-                    Impact Over Time
+                    Impact Analytics
                   </CardTitle>
                   <div className="flex gap-2">
                     {(["week", "month", "year"] as const).map((range) => (
                       <button
                         key={range}
-                        onClick={() => setTimeRange(range)}
+                        onClick={() => handleTimeRangeChange(range)}
                         className={cn(
                           "px-3 py-1 rounded-md text-sm transition-colors",
                           timeRange === range
@@ -312,14 +407,141 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="h-64 rounded-lg bg-gray-900/50 border border-gray-800 flex items-center justify-center">
-                  <div className="text-center text-gray-400">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-2 text-emerald-400" />
-                    <p>Impact chart visualization</p>
-                    <p className="text-sm">Meals donated, CO₂ saved, people fed</p>
+              <CardContent className="space-y-6">
+                {loading.analytics ? (
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="animate-pulse text-gray-400">Loading analytics...</div>
                   </div>
-                </div>
+                ) : error.analytics ? (
+                  <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 text-red-200">
+                    <AlertCircle className="h-5 w-5 inline mr-2" />
+                    {error.analytics}
+                  </div>
+                ) : analytics ? (
+                  <>
+                    {/* Timeline Chart */}
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={analytics.timeline}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis 
+                            dataKey="date" 
+                            stroke="#9CA3AF"
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis 
+                            stroke="#9CA3AF"
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#1F2937',
+                              borderColor: '#374151',
+                              borderRadius: '0.5rem',
+                            }}
+                            itemStyle={{ color: '#E5E7EB' }}
+                            labelStyle={{ color: '#9CA3AF', fontWeight: 'bold' }}
+                          />
+                          <Legend />
+                          <Area
+                            type="monotone"
+                            dataKey="meals"
+                            name="Meals Donated"
+                            stroke="#10B981"
+                            fill="#10B981"
+                            fillOpacity={0.2}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="people"
+                            name="People Fed"
+                            stroke="#3B82F6"
+                            fill="#3B82F6"
+                            fillOpacity={0.2}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Environmental Impact Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-300">
+                            <Leaf className="h-5 w-5" />
+                          </div>
+                          <h4 className="font-semibold">Carbon Impact</h4>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-2xl font-bold text-emerald-400">
+                            {Math.round(analytics.impactSummary.totalCO2Saved / 100) / 10} tons CO₂
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Equivalent to {analytics.impactSummary.equivalentCarMiles} car miles
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="p-2 rounded-full bg-blue-500/20 text-blue-300">
+                            <Droplets className="h-5 w-5" />
+                          </div>
+                          <h4 className="font-semibold">Water Saved</h4>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-2xl font-bold text-blue-400">
+                            {Math.round(analytics.impactSummary.totalWaterSaved / 1000)} m³
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Equivalent to {analytics.impactSummary.equivalentShowers} showers
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-3 rounded-lg bg-gray-800/20 border border-gray-700">
+                        <p className="text-sm text-gray-400">Completion Rate</p>
+                        <p className="text-xl font-bold">
+                          {Math.round(analytics.completionRate)}%
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-gray-800/20 border border-gray-700">
+                        <p className="text-sm text-gray-400">Avg Response Time</p>
+                        <p className="text-xl font-bold">
+                          {analytics.responseTimes.average}m
+                          <span className={cn(
+                            "ml-2 text-xs",
+                            analytics.responseTimes.trend === 'improving' ? 'text-emerald-400' : 
+                            analytics.responseTimes.trend === 'declining' ? 'text-red-400' : 'text-gray-400'
+                          )}>
+                            {analytics.responseTimes.trend === 'improving' ? '↓ Improving' : 
+                             analytics.responseTimes.trend === 'declining' ? '↑ Declining' : '→ Stable'}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-gray-800/20 border border-gray-700">
+                        <p className="text-sm text-gray-400">Food Types</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {analytics.foodTypeDistribution.map((item) => (
+                            <Badge 
+                              key={item.type}
+                              variant="outline"
+                              className="text-xs text-gray-300 border-gray-600"
+                            >
+                              {item.type}: {item.percentage}%
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </CardContent>
             </Card>
 

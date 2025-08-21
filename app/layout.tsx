@@ -6,6 +6,29 @@ import { AuthProvider } from "@/context/AuthContext"
 import { NotificationsProvider } from "@/context/NotificationsContext"
 import './globals.css'
 import Script from 'next/script'
+import { startExpirationChecker } from '@/lib/services/expirationChecker'
+
+// Start the expiration checker when the app loads
+if (typeof window !== 'undefined') {
+  // Client-side only - start the expiration checker
+  console.log('Starting expiration checker...');
+  
+  // Run immediately on startup
+  setTimeout(() => {
+    import('@/lib/services/expirationChecker').then(({ checkExpiringListings, expireOldListings }) => {
+      checkExpiringListings();
+      expireOldListings();
+    });
+  }, 5000); // Wait 5 seconds after app loads
+  
+  // Set up interval for regular checks (every 30 minutes)
+  setInterval(() => {
+    import('@/lib/services/expirationChecker').then(({ checkExpiringListings, expireOldListings }) => {
+      checkExpiringListings();
+      expireOldListings();
+    });
+  }, 30 * 60 * 1000); // 30 minutes
+}
 
 export const metadata: Metadata = {
   title: 'CommunityBite - Food Sharing Platform',
@@ -70,6 +93,35 @@ export default function RootLayout({
             <ToasterProvider />
             {children}
             
+            <Script 
+              id="expiration-checker" 
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  // Start expiration checker after app loads
+                  setTimeout(() => {
+                    console.log('Starting expiration checker...');
+                    fetch('/api/listings/check-expirations', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      }
+                    }).catch(err => console.log('Expiration check request failed:', err));
+                  }, 5000);
+                  
+                  // Set up interval for regular checks (every 30 minutes)
+                  setInterval(() => {
+                    fetch('/api/listings/check-expirations', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      }
+                    }).catch(err => console.log('Expiration check request failed:', err));
+                  }, 30 * 60 * 1000);
+                `
+              }}
+            />
+            
             <Script id="sw-registration" strategy="afterInteractive">
               {`
                 if ('serviceWorker' in navigator) {
@@ -96,14 +148,18 @@ export default function RootLayout({
                             applicationServerKey: '${process.env.NEXT_PUBLIC_VAPID_KEY}'
                           });
                           
-                          await fetch('/api/push/subscribe', {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                              'Authorization': \`Bearer \${localStorage.getItem('authToken')}\`
-                            },
-                            body: JSON.stringify(subscription)
-                          });
+                          // Only try to subscribe if user is authenticated
+                          const token = localStorage.getItem('authToken');
+                          if (token) {
+                            await fetch('/api/push/subscribe', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': \`Bearer \${token}\`
+                              },
+                              body: JSON.stringify(subscription)
+                            }).catch(err => console.log('Push subscription failed:', err));
+                          }
                         }
                       }
                     } catch (error) {
@@ -113,8 +169,15 @@ export default function RootLayout({
                   
                   window.addEventListener('load', registerSw);
                   
+                  // Re-register when auth state changes
                   if (typeof window !== 'undefined') {
-                    window.addEventListener('authStateChanged', registerSw);
+                    const originalSetItem = localStorage.setItem;
+                    localStorage.setItem = function(key, value) {
+                      originalSetItem.apply(this, arguments);
+                      if (key === 'authToken' && value) {
+                        setTimeout(registerSw, 1000);
+                      }
+                    };
                   }
                 }
               `}

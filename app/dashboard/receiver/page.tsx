@@ -1,3 +1,4 @@
+//app/dashboard/receiver/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -65,7 +66,7 @@ interface ImpactStats {
 
 export default function ReceiverDashboardPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, logout } = useAuth() // Added logout from useAuth
   const { toast } = useToast()
   
   // State for search and filters
@@ -83,56 +84,68 @@ export default function ReceiverDashboardPage() {
   const [impactStats, setImpactStats] = useState<ImpactStats | null>(null)
   
   // State for location and QR scanner
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number }>({ 
+    lat: 22.5726, // Default to Kolkata coordinates
+    lng: 88.3639 
+  })
   const [locationError, setLocationError] = useState<string | null>(null)
   const [qrScanOpen, setQrScanOpen] = useState(false)
 
-  // Get user's current location
+  // Get user's current location with fallback
   useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation not supported - using default location")
+      return
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
-        console.log("Browser geolocation:", { latitude, longitude }); // 🚨 Log this!
-        setUserLocation({ lat: latitude, lng: longitude });
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        })
       },
       (err) => {
-        console.error("Geolocation error:", err);
-        setLocationError("Enable location access to see nearby listings.");
-      }
-    );
-  }, []);
+        console.error("Geolocation error:", err)
+        setLocationError("Using default location - enable location for accurate results")
+      },
+      { timeout: 5000 } // Add timeout
+    )
+  }, [])
 
   // Fetch listings when filters or location change
   useEffect(() => {
     const fetchListings = async () => {
-      if (!userLocation) return
-
       try {
         setLoading(true)
         setError(null)
 
+        // Use token from auth context instead of localStorage
         const token = localStorage.getItem('authToken')
         if (!token) {
-          throw new Error('No authentication token found')
+          throw new Error('Authentication required - please login again')
         }
 
         const params = new URLSearchParams({
-          lat: userLocation.lat.toString(), // ✅ Must be 22.5006 (Kolkata)
-          lng: userLocation.lng.toString(), // ✅ Must be 88.3007 (Kolkata)
+          lat: userLocation.lat.toString(),
+          lng: userLocation.lng.toString(),
           maxDistance: maxDistance.toString(),
           vegOnly: vegOnly.toString(),
           query: searchQuery
-        });
-
-        console.log("Sending coordinates to API:", params.toString());
+        })
 
         const response = await fetch(`/api/listings/available?${params.toString()}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         })
 
         if (!response.ok) {
+          if (response.status === 401) {
+            logout() // Force logout if token is invalid
+            throw new Error('Session expired - please login again')
+          }
           throw new Error('Failed to fetch listings')
         }
 
@@ -140,16 +153,14 @@ export default function ReceiverDashboardPage() {
         setListings(data.listings || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load listings')
-        console.error('Error fetching listings:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    // Add debounce to prevent too many requests while typing
     const debounceTimer = setTimeout(fetchListings, 500)
     return () => clearTimeout(debounceTimer)
-  }, [userLocation, maxDistance, vegOnly, searchQuery])
+  }, [userLocation, maxDistance, vegOnly, searchQuery, logout])
 
   // Fetch impact stats
   useEffect(() => {
@@ -182,44 +193,44 @@ export default function ReceiverDashboardPage() {
     try {
       const token = localStorage.getItem('authToken')
       if (!token) {
-        throw new Error('No authentication token found')
+        throw new Error('Authentication required')
       }
 
       const response = await fetch(`/api/listings/${listingId}/claim`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Add empty body if required
       })
 
       if (!response.ok) {
-        throw new Error('Failed to claim listing')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to claim listing')
       }
 
       toast({
         title: "Success",
-        description: "Food claimed successfully! Check notifications for details.",
-        variant: "success"
+        description: "Food claimed successfully!",
+        variant: "default"
       })
 
-      // Refresh listings after claim
+      // Refresh listings
       const params = new URLSearchParams({
-        lat: userLocation?.lat.toString() || '0',
-        lng: userLocation?.lng.toString() || '0',
+        lat: userLocation.lat.toString(),
+        lng: userLocation.lng.toString(),
         maxDistance: maxDistance.toString(),
         vegOnly: vegOnly.toString(),
         query: searchQuery
       })
 
-      const listingsResponse = await fetch(`/api/listings/available?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const res = await fetch(`/api/listings/available?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       })
-
-      if (listingsResponse.ok) {
-        const data = await listingsResponse.json()
-        setListings(data.listings || [])
+      
+      if (res.ok) {
+        setListings((await res.json()).listings || [])
       }
     } catch (err) {
       toast({
@@ -227,6 +238,10 @@ export default function ReceiverDashboardPage() {
         description: err instanceof Error ? err.message : 'Failed to claim food',
         variant: "destructive"
       })
+      
+      if (err instanceof Error && err.message.includes('Session expired')) {
+        logout()
+      }
     }
   }
 

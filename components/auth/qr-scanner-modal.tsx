@@ -1,3 +1,4 @@
+//components/auth/qr-scanner-modal.tsx
 "use client"
 
 import { useEffect, useRef } from "react"

@@ -1,3 +1,4 @@
+//lib/models/Receiver.ts
 import mongoose, { Document, Schema } from 'mongoose';
 import User from './User';
 

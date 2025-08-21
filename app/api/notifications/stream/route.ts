@@ -1,7 +1,9 @@
+//app/api/notifications/stream/route.ts
 import { NextResponse } from 'next/server'
 import { verifyTokenForSSE } from '@/lib/auth'
 import connectToDB from '@/lib/db'
 import NotificationModel from '@/lib/models/Notification'
+import mongoose from 'mongoose'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +23,8 @@ export async function GET(request: Request) {
       return new NextResponse('Invalid token', { status: 401 })
     }
 
+    const userId = new mongoose.Types.ObjectId(decoded.userId)
+
     const stream = new ReadableStream({
       async start(controller) {
         console.log(`New SSE connection for user: ${decoded.userId}`)
@@ -30,11 +34,15 @@ export async function GET(request: Request) {
           controller.enqueue(': heartbeat\n\n')
         }, 25000)
 
-        // Send initial notifications
+        // Send initial unread notifications
         const initialNotifications = await NotificationModel.find({
-          userId: decoded.userId,
+          userId: userId,
           read: false
-        }).sort({ createdAt: -1 }).limit(10).lean()
+        })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('listingId', 'title imageUrl')
+        .lean()
 
         controller.enqueue(`data: ${JSON.stringify({
           type: 'INITIAL',
@@ -45,7 +53,7 @@ export async function GET(request: Request) {
         const changeStream = NotificationModel.watch(
           [{
             $match: {
-              'fullDocument.userId': decoded.userId,
+              'fullDocument.userId': userId,
               operationType: 'insert'
             }
           }],
@@ -55,12 +63,17 @@ export async function GET(request: Request) {
           }
         )
 
-        changeStream.on('change', (change) => {
+        changeStream.on('change', async (change) => {
           if (change.operationType === 'insert') {
-            console.log('New notification detected:', change.fullDocument._id)
+            const notification = change.fullDocument
+            const populated = await NotificationModel.populate(notification, {
+              path: 'listingId',
+              select: 'title imageUrl'
+            })
+            
             controller.enqueue(`data: ${JSON.stringify({
               type: 'NEW_NOTIFICATION',
-              notification: change.fullDocument
+              notification: populated
             })}\n\n`)
           }
         })
@@ -71,9 +84,8 @@ export async function GET(request: Request) {
           controller.close()
         })
 
-        // Handle client disconnect
+        // Cleanup on disconnect
         request.signal.addEventListener('abort', () => {
-          console.log('Client disconnected, cleaning up SSE')
           clearInterval(heartbeatInterval)
           changeStream.close()
           controller.close()

@@ -1,4 +1,3 @@
-// next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -8,9 +7,10 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ['res.cloudinary.com'], // Add your image domains
+    domains: ['res.cloudinary.com'],
     unoptimized: true,
   },
+  serverExternalPackages: ['mongoose'],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push({
@@ -19,7 +19,6 @@ const nextConfig = {
       })
     }
     
-    // Add support for service worker files
     config.module.rules.push({
       test: /\.worker\.js$/,
       loader: 'worker-loader',
@@ -32,10 +31,7 @@ const nextConfig = {
     return config
   },
   experimental: {
-    // Enable modern web features
     optimizePackageImports: ['web-push'],
-    serverComponentsExternalPackages: ['mongoose'],
-    swcMinify: true,
   },
   headers: async () => {
     return [
@@ -45,6 +41,10 @@ const nextConfig = {
           {
             key: 'Service-Worker-Allowed',
             value: '/',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
           },
         ],
       },

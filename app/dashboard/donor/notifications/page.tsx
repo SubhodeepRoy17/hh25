@@ -66,9 +66,7 @@ export default function NotificationsPage() {
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
-      case "pickup":
-        return <Users className="h-5 w-5" />
-      case "expiring":
+      case "expiring_soon":
         return <Clock className="h-5 w-5" />
       case "completed":
         return <CheckCircle2 className="h-5 w-5" />
@@ -208,14 +206,13 @@ export default function NotificationsPage() {
                         <div
                           className={cn(
                             "p-2 rounded-full",
-                            notification.type === "pickup" && "bg-emerald-500/20 text-emerald-300",
                             notification.type === "expiring" && "bg-yellow-500/20 text-yellow-300",
-                            notification.type === "completed" && "bg-blue-500/20 text-blue-300",
+                            notification.type === "completed" && "bg-blue-500/20 text-blue-300", 
                             notification.type === "new_listing" && "bg-purple-500/20 text-purple-300",
                             notification.type === "claim" && "bg-red-500/20 text-red-300"
                           )}
                         >
-                          {getNotificationIcon(notification.type)}
+                          {getNotificationIcon(notification.type as NotificationType)}
                         </div>
                         <div className="flex-1">
                           <p className={cn(

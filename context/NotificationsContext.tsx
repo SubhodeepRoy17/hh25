@@ -1,3 +1,4 @@
+//context/NotificationsContext.tsx
 "use client"
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
@@ -41,6 +42,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const { toast } = useToast()
   const router = useRouter()
   const eventSourceRef = useRef<EventSource | null>(null)
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return
@@ -112,20 +114,38 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [])
 
   const setupEventSource = useCallback(() => {
-    if (!user) return
-
-    const token = localStorage.getItem('authToken')
-    if (!token) return
-
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close()
+    if (!user) {
+      console.log('SSE: No user, skipping setup')
+      return
     }
 
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      console.error('SSE: No auth token available')
+      return
+    }
+
+    // Clear any existing connection and retry timeout
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current)
+      retryTimeoutRef.current = null
+    }
+
+    console.log('SSE: Establishing new connection')
     const eventSource = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`)
     eventSourceRef.current = eventSource
 
     eventSource.onopen = () => {
-      console.log('SSE connection established')
+      console.log('SSE: Connection established')
+      // Reset retry count on successful connection
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+        retryTimeoutRef.current = null
+      }
     }
 
     eventSource.onmessage = (event) => {
@@ -135,10 +155,12 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         const data = JSON.parse(event.data)
         
         if (data.type === 'INITIAL') {
+          console.log('SSE: Received initial notifications', data.notifications.length)
           setNotifications(data.notifications)
           setUnreadCount(data.notifications.filter((n: Notification) => !n.read).length)
         } 
         else if (data.type === 'NEW_NOTIFICATION') {
+          console.log('SSE: New notification received', data.notification._id)
           const newNotification = data.notification
           setNotifications(prev => [newNotification, ...prev])
           setUnreadCount(prev => prev + 1)
@@ -158,30 +180,61 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
           })
         }
       } catch (error) {
-        console.error('Error processing SSE message:', error)
+        console.error('SSE: Error processing message:', error)
       }
     }
 
-    eventSource.onerror = () => {
-      console.error('SSE connection error, reconnecting...')
+    eventSource.onerror = (error) => {
+      console.error('SSE: Connection error:', error)
+      
+      // Close the current connection
       eventSource.close()
-      setTimeout(() => setupEventSource(), 5000)
+      eventSourceRef.current = null
+      
+      // Implement exponential backoff for reconnection
+      const retryCount = retryTimeoutRef.current ? parseInt(localStorage.getItem('sseRetryCount') || '0') : 0
+      const delay = Math.min(1000 * Math.pow(2, retryCount), 30000) // Max 30 seconds
+
+      console.log(`SSE: Will attempt reconnection in ${delay}ms (attempt ${retryCount + 1})`)
+      localStorage.setItem('sseRetryCount', (retryCount + 1).toString())
+
+      retryTimeoutRef.current = setTimeout(() => {
+        console.log('SSE: Attempting reconnection...')
+        setupEventSource()
+      }, delay)
     }
 
     return () => {
-      eventSource.close()
+      console.log('SSE: Cleaning up connection')
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+        retryTimeoutRef.current = null
+      }
     }
   }, [user, toast, router])
 
   useEffect(() => {
     if (user) {
+      console.log('Notifications: User detected, initializing')
       fetchNotifications()
       setupEventSource()
+    } else {
+      console.log('Notifications: No user, skipping initialization')
     }
 
     return () => {
+      console.log('Notifications: Component unmounting, cleaning up')
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+        retryTimeoutRef.current = null
       }
     }
   }, [user, fetchNotifications, setupEventSource])

@@ -1,3 +1,4 @@
+//app/api/auth/verify/route.ts
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';

@@ -6,6 +6,7 @@ import { uploadImages } from '@/lib/cloudinary'
 import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/auth'
 import sanitizeHtml from 'sanitize-html'
+import { notifyNewListing } from '@/lib/services/notifications'
 
 // Type for listing response
 interface ListingResponse {
@@ -60,14 +61,15 @@ export async function GET(req: Request) {
     if (status) {
       query.status = status
     }
+
+    // Auto-expire old listings
     await FoodListing.updateMany(
-  { 
-    availableUntil: { $lt: currentDate },
-    status: { $ne: 'completed' } // Don't update completed listings
-  },
-  { $set: { status: 'expired' } }
-);
-   
+      { 
+        availableUntil: { $lt: currentDate },
+        status: { $in: ['published', 'claimed'] } // Don't update completed listings
+      },
+      { $set: { status: 'expired' } }
+    );
 
     // Fetch listings with optional filtering
     const listings: ListingResponse[] = await FoodListing.find(query)
@@ -162,27 +164,86 @@ export async function POST(req: Request) {
 
     // Parse JSON fields
     let parsedTypes: FoodType[];
-    let parsedLocation: Location;
+    let parsedLocation: any;
     
     try {
       parsedTypes = JSON.parse(types) as FoodType[];
-      parsedLocation = JSON.parse(location) as Location;
+      const locationData = JSON.parse(location);
+      
+      // Handle different location data formats
+      if (locationData.coordinates) {
+        // Already in our format
+        parsedLocation = locationData;
+      } else if (locationData.lat && locationData.lng) {
+        // Raw coordinates format
+        parsedLocation = {
+          address: locationData.address || locationData.display_name || '',
+          coordinates: {
+            lat: locationData.lat,
+            lng: locationData.lng
+          },
+          geoPoint: {
+            type: 'Point',
+            coordinates: [locationData.lng, locationData.lat]
+          }
+        };
+      } else if (locationData.lat && locationData.lon) {
+        // Nominatim format (lat, lon)
+        parsedLocation = {
+          address: locationData.display_name || '',
+          coordinates: {
+            lat: locationData.lat,
+            lng: locationData.lon
+          },
+          geoPoint: {
+            type: 'Point',
+            coordinates: [locationData.lon, locationData.lat]
+          }
+        };
+      } else {
+        throw new Error('Invalid location format');
+      }
+
+      // Validate coordinates
+      if (!parsedLocation.coordinates.lat || !parsedLocation.coordinates.lng) {
+        throw new Error('Missing coordinates in location data');
+      }
+
     } catch (e) {
+      console.error('Location parsing error:', e);
       return NextResponse.json(
-        { error: 'Invalid data format for types or location' },
+        { error: 'Invalid data format for types or location. Please select a valid location from suggestions.' },
+        { status: 400 }
+      )
+    }
+
+    // Validate availability dates
+    const availableFromDate = new Date(availableFrom);
+    const availableUntilDate = new Date(availableUntil);
+    
+    if (availableUntilDate <= availableFromDate) {
+      return NextResponse.json(
+        { error: 'Available until must be after available from' },
+        { status: 400 }
+      )
+    }
+
+    if (availableUntilDate <= new Date()) {
+      return NextResponse.json(
+        { error: 'Available until must be in the future' },
         { status: 400 }
       )
     }
 
     // Create new listing
     const listing = new FoodListing({
-      title,
+      title: title.trim(),
       types: parsedTypes,
       quantity: Number(quantity),
       unit,
       freshness,
-      availableFrom: new Date(availableFrom),
-      availableUntil: new Date(availableUntil),
+      availableFrom: availableFromDate,
+      availableUntil: availableUntilDate,
       location: parsedLocation,
       instructions: sanitizeHtml(instructions),
       allowPartial,
@@ -193,6 +254,15 @@ export async function POST(req: Request) {
     })
 
     await listing.save()
+
+    // Send notifications to nearby receivers - FIXED: Use await and proper error handling
+    try {
+      const notifications = await notifyNewListing(listing._id.toString());
+      console.log(`New listing notifications sent successfully: ${notifications.length} notifications`);
+    } catch (notificationError) {
+      console.error('Failed to send notifications:', notificationError);
+      // Don't fail the request if notifications fail
+    }
 
     return NextResponse.json({ 
       success: true, 

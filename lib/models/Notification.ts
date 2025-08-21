@@ -1,6 +1,7 @@
+//lib/models/Notification.ts
 import mongoose from 'mongoose'
 
-export type NotificationType = "pickup" | "expiring" | "completed" | "new_listing" | "claim"
+export type NotificationType = "new_listing" | "claim" | "expiring_soon" | "completed"
 
 export interface INotification extends mongoose.Document {
   userId: mongoose.Schema.Types.ObjectId
@@ -9,7 +10,11 @@ export interface INotification extends mongoose.Document {
   message: string
   urgent: boolean
   read: boolean
-  metadata?: Record<string, any>
+  metadata?: {
+    distance?: number
+    expiryTime?: Date
+    claimerName?: string
+  }
   createdAt: Date
 }
 
@@ -26,7 +31,7 @@ const NotificationSchema = new mongoose.Schema<INotification>({
   },
   type: {
     type: String,
-    enum: ["pickup", "expiring", "completed", "new_listing", "claim"],
+    enum: ["new_listing", "claim", "expiring_soon", "completed"],
     required: true
   },
   message: {
@@ -48,17 +53,14 @@ const NotificationSchema = new mongoose.Schema<INotification>({
   createdAt: {
     type: Date,
     default: Date.now,
-    index: -1 // Descending index
+    index: -1
   }
 })
 
-// Add change stream support
-NotificationSchema.post('save', function(doc) {
-  console.log('Notification saved:', doc._id)
-})
-
-// Optimize for common queries
+// Optimized indexes
 NotificationSchema.index({ userId: 1, read: 1, createdAt: -1 })
+NotificationSchema.index({ listingId: 1 })
+NotificationSchema.index({ createdAt: -1 })
 
 export default mongoose.models?.Notification || 
   mongoose.model<INotification>('Notification', NotificationSchema)
