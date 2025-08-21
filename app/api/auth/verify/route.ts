@@ -5,90 +5,71 @@ import User from '@/lib/models/User';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
-// Helper function to send verification email for Donors
-async function sendDonorVerificationEmail(email: string, token: string) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+// Create a reusable transporter object
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  // Add these settings for better performance
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+});
 
+// Helper function to send verification email
+async function sendVerificationEmail(email: string, token: string, role: string) {
   const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/verify?token=${token}`;
 
-  await transporter.sendMail({
-    from: `"Smart Surplus" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Verify Your Donor Account',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2ECC71;">Welcome, Food Donor!</h2>
-        <p>Thank you for joining Smart Surplus as a donor!</p>
-        <p>By verifying your account, you'll be able to:</p>
-        <ul>
-          <li>List surplus food items for donation</li>
-          <li>Connect with local organizations in need</li>
-          <li>Track your donations and impact</li>
-        </ul>
-        <p>Please click the button below to verify your email address:</p>
-        <a href="${verificationUrl}" 
-           style="display: inline-block; padding: 12px 24px; background-color: #2ECC71; 
-                  color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
-          Verify Donor Account
-        </a>
-        <p style="margin-top: 20px;">Or copy and paste this link into your browser:</p>
-        <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px;">
-          ${verificationUrl}
-        </p>
-        <p style="margin-top: 20px;">This link will expire in 24 hours.</p>
-        <p>If you didn't request this verification, please ignore this email.</p>
-      </div>
-    `,
-  });
-}
+  const isDonor = role === 'donor';
+  const subject = isDonor ? 'Verify Your Donor Account' : 'Verify Your Receiver Account';
+  const color = isDonor ? '#2ECC71' : '#3498DB';
 
-// Helper function to send verification email for Receivers
-async function sendReceiverVerificationEmail(email: string, token: string) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    // Send mail with defined transport object
+    const info = await transporter.sendMail({
+      from: `"Smart Surplus" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${color};">Welcome, ${isDonor ? 'Food Donor' : 'Food Receiver'}!</h2>
+          <p>Thank you for joining Smart Surplus as a ${role}!</p>
+          <p>By verifying your account, you'll be able to:</p>
+          <ul>
+            ${isDonor ? `
+              <li>List surplus food items for donation</li>
+              <li>Connect with local organizations in need</li>
+              <li>Track your donations and impact</li>
+            ` : `
+              <li>Browse available food donations in your area</li>
+              <li>Request food items for your organization</li>
+              <li>Coordinate pickups with donors</li>
+            `}
+          </ul>
+          <p>Please click the button below to verify your email address:</p>
+          <a href="${verificationUrl}" 
+             style="display: inline-block; padding: 12px 24px; background-color: ${color}; 
+                    color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Verify ${isDonor ? 'Donor' : 'Receiver'} Account
+          </a>
+          <p style="margin-top: 20px;">Or copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px;">
+            ${verificationUrl}
+          </p>
+          <p style="margin-top: 20px;">This link will expire in 24 hours.</p>
+          <p>If you didn't request this verification, please ignore this email.</p>
+        </div>
+      `,
+    });
 
-  const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/verify?token=${token}`;
-
-  await transporter.sendMail({
-    from: `"Smart Surplus" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Verify Your Receiver Account',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #3498DB;">Welcome, Food Receiver!</h2>
-        <p>Thank you for joining Smart Surplus as a receiver!</p>
-        <p>By verifying your account, you'll be able to:</p>
-        <ul>
-          <li>Browse available food donations in your area</li>
-          <li>Request food items for your organization</li>
-          <li>Coordinate pickups with donors</li>
-        </ul>
-        <p>Please click the button below to verify your email address:</p>
-        <a href="${verificationUrl}" 
-           style="display: inline-block; padding: 12px 24px; background-color: #3498DB; 
-                  color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
-          Verify Receiver Account
-        </a>
-        <p style="margin-top: 20px;">Or copy and paste this link into your browser:</p>
-        <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px;">
-          ${verificationUrl}
-        </p>
-        <p style="margin-top: 20px;">This link will expire in 24 hours.</p>
-        <p>If you didn't request this verification, please ignore this email.</p>
-      </div>
-    `,
-  });
+    console.log('Message sent: %s', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
 }
 
 // Generate and send verification token
@@ -120,14 +101,14 @@ export async function POST(request: Request) {
     user.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     await user.save();
 
-    // Send appropriate verification email based on user role
-    if (user.role === 'donor') {
-      await sendDonorVerificationEmail(user.email, verificationToken);
-    } else if (user.role === 'receiver') {
-      await sendReceiverVerificationEmail(user.email, verificationToken);
-    } else {
-      // Fallback for other roles or undefined roles
-      await sendDonorVerificationEmail(user.email, verificationToken);
+    // Send verification email immediately
+    const emailSent = await sendVerificationEmail(user.email, verificationToken, user.role);
+
+    if (!emailSent) {
+      return NextResponse.json(
+        { error: 'Failed to send verification email' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
