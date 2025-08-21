@@ -8,7 +8,7 @@ import Link from "next/link"
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-black-600">
       <div className="container mx-auto px-4 py-8">
         <Button
           asChild
@@ -29,17 +29,17 @@ export default function PrivacyPolicyPage() {
               </div>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Privacy Policy</h1>
-            <p className="text-gray-400">Last updated: {new Date().toLocaleDateString()}</p>
+            <p className="text-black-400">Last updated: {new Date().toLocaleDateString()}</p>
           </div>
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-black-600">
                 <Lock className="h-5 w-5 text-emerald-300" />
                 Introduction
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 At FoodShare, we take your privacy seriously. This Privacy Policy describes how we collect, use, and share your personal information when you use our platform to connect food donors with receivers.
               </p>
@@ -51,12 +51,12 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-black-600">
                 <Database className="h-5 w-5 text-emerald-300" />
                 Information We Collect
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p className="font-medium">Personal Information:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Name, email address, and phone number</li>
@@ -84,9 +84,9 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">How We Use Your Information</CardTitle>
+              <CardTitle className="text-black-600">How We Use Your Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>We use the information we collect for various purposes, including:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>To provide and maintain our Service</li>
@@ -104,9 +104,9 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Information Sharing</CardTitle>
+              <CardTitle className="text-black-600">Information Sharing</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>We may share your personal information in the following situations:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
@@ -127,12 +127,12 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-black-600">
                 <Eye className="h-5 w-5 text-emerald-300" />
                 Your Data Rights
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>Depending on your location, you may have the following rights regarding your personal information:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>Access and receive a copy of your personal data</li>
@@ -148,9 +148,9 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Data Security</CardTitle>
+              <CardTitle className="text-black-600">Data Security</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 We implement appropriate technical and organizational measures to protect your personal information against unauthorized or unlawful processing, accidental loss, destruction, or damage.
               </p>
@@ -162,9 +162,9 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Children's Privacy</CardTitle>
+              <CardTitle className="text-black-600">Children's Privacy</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 Our Service is not intended for use by children under the age of 13. We do not knowingly collect personally identifiable information from children under 13.
               </p>
@@ -176,9 +176,9 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Changes to This Privacy Policy</CardTitle>
+              <CardTitle className="text-black-600">Changes to This Privacy Policy</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.
               </p>
@@ -193,12 +193,12 @@ export default function PrivacyPolicyPage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-black-600">
                 <Mail className="h-5 w-5 text-emerald-300" />
                 Contact Us
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>

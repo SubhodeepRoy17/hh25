@@ -8,7 +8,7 @@ import Link from "next/link"
 
 export default function TermsOfServicePage() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-black-600">
       <div className="container mx-auto px-4 py-8">
         <Button
           asChild
@@ -29,17 +29,17 @@ export default function TermsOfServicePage() {
               </div>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Terms of Service</h1>
-            <p className="text-gray-400">Last updated: {new Date().toLocaleDateString()}</p>
+            <p className="text-black-400">Last updated: {new Date().toLocaleDateString()}</p>
           </div>
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-black-600">
                 <Shield className="h-5 w-5 text-emerald-300" />
                 Introduction
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 Welcome to FoodShare, a platform dedicated to reducing food waste by connecting donors with surplus food to receivers in need. These Terms of Service govern your use of our website and services.
               </p>
@@ -51,9 +51,9 @@ export default function TermsOfServicePage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Accounts</CardTitle>
+              <CardTitle className="text-black-600">Accounts</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 When you create an account with us, you must provide accurate, complete, and current information. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account.
               </p>
@@ -65,9 +65,9 @@ export default function TermsOfServicePage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Food Donation Guidelines</CardTitle>
+              <CardTitle className="text-black-600">Food Donation Guidelines</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 As a donor, you agree to:
               </p>
@@ -82,9 +82,9 @@ export default function TermsOfServicePage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Food Receiving Guidelines</CardTitle>
+              <CardTitle className="text-black-600">Food Receiving Guidelines</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 As a receiver, you agree to:
               </p>
@@ -99,12 +99,12 @@ export default function TermsOfServicePage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-black-600">
                 <AlertTriangle className="h-5 w-5 text-amber-300" />
                 Disclaimer of Warranties
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 The Service is provided on an "AS IS" and "AS AVAILABLE" basis. FoodShare makes no representations or warranties of any kind regarding:
               </p>
@@ -121,9 +121,9 @@ export default function TermsOfServicePage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Limitation of Liability</CardTitle>
+              <CardTitle className="text-black-600">Limitation of Liability</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 To the fullest extent permitted by applicable law, FoodShare shall not be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:
               </p>
@@ -138,9 +138,9 @@ export default function TermsOfServicePage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 mb-6">
             <CardHeader>
-              <CardTitle className="text-white">Changes to Terms</CardTitle>
+              <CardTitle className="text-black-600">Changes to Terms</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will provide at least 30 days' notice prior to any new terms taking effect.
               </p>
@@ -152,9 +152,9 @@ export default function TermsOfServicePage() {
 
           <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800">
             <CardHeader>
-              <CardTitle className="text-white">Contact Us</CardTitle>
+              <CardTitle className="text-black-600">Contact Us</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-gray-300">
+            <CardContent className="space-y-4 text-black-300">
               <p>
                 If you have any questions about these Terms, please contact us at:
               </p>
