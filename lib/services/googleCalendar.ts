@@ -37,16 +37,36 @@ class GoogleCalendarService {
     return tokens;
   }
 
-  async listEvents(timeMin: string, timeMax: string): Promise<calendar_v3.Schema$Event[]> {
-    const response = await this.calendar.events.list({
-      calendarId: 'primary',
-      timeMin,
-      timeMax,
-      singleEvents: true,
-      orderBy: 'startTime',
-    });
+  async refreshAccessToken(refreshToken: string): Promise<any> {
+    try {
+        this.oauth2Client.setCredentials({
+        refresh_token: refreshToken
+        });
+        
+        const { credentials } = await this.oauth2Client.refreshAccessToken();
+        return credentials;
+    } catch (error) {
+        console.error('Failed to refresh access token:', error);
+        throw new Error('Token refresh failed');
+    }
+    }
 
-    return response.data.items || [];
+  async listEvents(timeMin: string, timeMax: string): Promise<calendar_v3.Schema$Event[]> {
+    try {
+        const response = await this.calendar.events.list({
+        calendarId: 'primary',
+        timeMin,
+        timeMax,
+        singleEvents: true,
+        orderBy: 'startTime',
+        });
+
+        return response.data.items || [];
+    } catch (error) {
+    console.error('Google Calendar API listEvents error:', error);
+    
+    throw error;
+  }
   }
 
   async watchEvents(channel: any): Promise<any> {
