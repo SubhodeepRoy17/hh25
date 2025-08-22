@@ -211,20 +211,6 @@ export default function RegisterPage() {
                   {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
                 </div>
               </div>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="gap-2 bg-transparent"
-                  onClick={() => setQrOpen(true)}
-                >
-                  Scan staff QR <QrCode className="h-4 w-4" />
-                </Button>
-                <Button type="button" variant="outline" className="gap-2 bg-transparent">
-                  Verify phone <Smartphone className="h-4 w-4" />
-                </Button>
-              </div>
             </>
           ) : (
             <>
