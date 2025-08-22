@@ -4,17 +4,36 @@ import Link from "next/link"
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('/food-surplus-basket.png')`,
-        }}
-      >
+    <section className="relative min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] flex items-center justify-center overflow-hidden">
+      {/* Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+        >
+          <source src="/food-redistribution-video.mp4" type="video/mp4" />
+          {/* Fallback image if video doesn't load */}
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url('/food-surplus-basket.png')`,
+            }}
+          ></div>
+        </video>
         <div className="absolute inset-0 bg-black/50"></div>
       </div>
 
-      <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
+      <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto w-full">
+        {/* Transparent Welcome Box */}
+        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+            Welcome to Smart Surplus
+          </h2>
+        </div>
+
         <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-6">
           <Leaf className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="text-xs sm:text-sm">Zero-Waste Campus Initiative</span>
