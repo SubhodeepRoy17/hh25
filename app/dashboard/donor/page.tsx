@@ -442,170 +442,287 @@ export default function DashboardPage() {
           {/* Left Column */}
           <div className="space-y-6">
             {/* Impact Chart */}
-            <Card className="bg-white border-gray-200 shadow-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-gray-900">
-                    <TrendingUp className="h-5 w-5 text-emerald-600" />
-                    Impact Analytics
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    {(["week", "month", "year"] as const).map((range) => (
-                      <button
-                        key={range}
-                        onClick={() => handleTimeRangeChange(range)}
-                        className={cn(
-                          "px-3 py-1 rounded-md text-sm transition-all duration-200",
-                          timeRange === range
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm"
-                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-transparent",
-                        )}
-                      >
-                        {range.charAt(0).toUpperCase() + range.slice(1)}
-                      </button>
-                    ))}
-                  </div>
+<Card className="bg-white border-gray-200 shadow-sm">
+  <CardHeader>
+    <div className="flex items-center justify-between">
+      <CardTitle className="flex items-center gap-2 text-gray-900">
+        <TrendingUp className="h-5 w-5 text-emerald-600" />
+        Impact Analytics
+      </CardTitle>
+      <div className="flex gap-2">
+        {(["week", "month", "year"] as const).map((range) => (
+          <button
+            key={range}
+            onClick={() => handleTimeRangeChange(range)}
+            className={cn(
+              "px-3 py-1 rounded-md text-sm transition-all duration-200 font-medium",
+              timeRange === range
+                ? "bg-emerald-600 text-white border border-emerald-600 shadow-sm"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300",
+            )}
+          >
+            {range.charAt(0).toUpperCase() + range.slice(1)}
+          </button>
+        ))}
+      </div>
+    </div>
+  </CardHeader>
+  <CardContent className="space-y-6">
+    {loading.analytics ? (
+      <div className="h-64 flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading analytics...</div>
+      </div>
+    ) : error.analytics ? (
+      <div className="bg-red-100 border border-red-300 rounded-lg p-4 text-red-800">
+        <AlertCircle className="h-5 w-5 inline mr-2" />
+        {error.analytics}
+      </div>
+    ) : analytics ? (
+      <>
+        {/* Timeline Chart with Toggle */}
+        <div className="flex justify-end mb-2">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              className={cn(
+                "px-3 py-1 rounded-md text-sm transition-all duration-200",
+                "meals" === "meals" 
+                  ? "bg-white text-emerald-600 shadow-sm font-medium"
+                  : "text-gray-600 hover:text-gray-900"
+              )}
+            >
+              Meals & People
+            </button>
+          </div>
+        </div>
+        
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={analytics.timeline}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="#e5e7eb" 
+                vertical={false}
+              />
+              <XAxis 
+                dataKey="date" 
+                stroke="#6b7280"
+                tick={{ fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis 
+                stroke="#6b7280"
+                tick={{ fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#ffffff',
+                  borderColor: '#e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                  padding: '12px'
+                }}
+                itemStyle={{ 
+                  color: '#374151',
+                  padding: '4px 0',
+                  fontSize: '14px'
+                }}
+                labelStyle={{ 
+                  color: '#111827', 
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  marginBottom: '8px'
+                }}
+                formatter={(value, name) => {
+                  if (name === 'meals') return [`${value} meals`, 'Meals Donated'];
+                  if (name === 'people') return [`${value} people`, 'People Fed'];
+                  if (name === 'co2') return [`${value} kg`, 'CO₂ Saved'];
+                  if (name === 'water') return [`${value} L`, 'Water Saved'];
+                  return [value, name];
+                }}
+              />
+              <Legend 
+                verticalAlign="top" 
+                height={36}
+                iconType="circle"
+                iconSize={10}
+                wrapperStyle={{
+                  paddingBottom: '16px'
+                }}
+              />
+              <Bar
+                dataKey="meals"
+                name="Meals Donated"
+                fill="#10b981"
+                radius={[4, 4, 0, 0]}
+                fillOpacity={0.8}
+              />
+              <Bar
+                dataKey="people"
+                name="People Fed"
+                fill="#3b82f6"
+                radius={[4, 4, 0, 0]}
+                fillOpacity={0.8}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Mini Charts for Environmental Data */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* CO2 Saved Mini Chart */}
+          <div className="p-4 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-emerald-600/20 text-emerald-600">
+                  <Leaf className="h-5 w-5" />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {loading.analytics ? (
-                  <div className="h-64 flex items-center justify-center">
-                    <div className="animate-pulse text-gray-400">Loading analytics...</div>
-                  </div>
-                ) : error.analytics ? (
-                  <div className="bg-red-100 border border-red-300 rounded-lg p-4 text-red-800">
-                    <AlertCircle className="h-5 w-5 inline mr-2" />
-                    {error.analytics}
-                  </div>
-                ) : analytics ? (
-                  <>
-                    {/* Timeline Chart */}
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={analytics.timeline}
-                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis 
-                            dataKey="date" 
-                            stroke="#6b7280"
-                            tick={{ fontSize: 12 }}
-                          />
-                          <YAxis 
-                            stroke="#6b7280"
-                            tick={{ fontSize: 12 }}
-                          />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#ffffff',
-                              borderColor: '#e5e7eb',
-                              borderRadius: '0.5rem',
-                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                            }}
-                            itemStyle={{ color: '#374151' }}
-                            labelStyle={{ color: '#6b7280', fontWeight: 'bold' }}
-                          />
-                          <Legend />
-                          <Area
-                            type="monotone"
-                            dataKey="meals"
-                            name="Meals Donated"
-                            stroke="#10b981"
-                            fill="#10b981"
-                            fillOpacity={0.2}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="people"
-                            name="People Fed"
-                            stroke="#3b82f6"
-                            fill="#3b82f6"
-                            fillOpacity={0.2}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">CO₂ Saved</h4>
+                  <p className="text-sm text-gray-600">This {timeRange}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-emerald-700">
+                  {Math.round(analytics.timeline.reduce((sum, item) => sum + item.co2, 0) / 100) / 10} kg
+                </p>
+              </div>
+            </div>
+            <div className="h-20">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={analytics.timeline}
+                  margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                >
+                  <Area
+                    type="monotone"
+                    dataKey="co2"
+                    stroke="#10b981"
+                    fill="#10b981"
+                    fillOpacity={0.3}
+                    strokeWidth={2}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#ffffff',
+                      borderColor: '#e5e7eb',
+                      borderRadius: '6px',
+                      padding: '8px'
+                    }}
+                    formatter={(value) => [`${value} kg`, 'CO₂ Saved']}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-                    {/* Environmental Impact Metrics */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 rounded-full bg-emerald-100 text-emerald-600">
-                            <Leaf className="h-5 w-5" />
-                          </div>
-                          <h4 className="font-semibold text-gray-900">Carbon Impact</h4>
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-2xl font-bold text-emerald-700">
-                            {Math.round(analytics.impactSummary.totalCO2Saved / 100) / 10} tons CO₂
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Equivalent to {analytics.impactSummary.equivalentCarMiles} car miles
-                          </p>
-                        </div>
-                      </div>
+          {/* Water Saved Mini Chart */}
+          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-blue-600/20 text-blue-600">
+                  <Droplets className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Water Saved</h4>
+                  <p className="text-sm text-gray-600">This {timeRange}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-blue-700">
+                  {Math.round(analytics.timeline.reduce((sum, item) => sum + item.water, 0))} L
+                </p>
+              </div>
+            </div>
+            <div className="h-20">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={analytics.timeline}
+                  margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                >
+                  <Area
+                    type="monotone"
+                    dataKey="water"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.3}
+                    strokeWidth={2}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#ffffff',
+                      borderColor: '#e5e7eb',
+                      borderRadius: '6px',
+                      padding: '8px'
+                    }}
+                    formatter={(value) => [`${value} L`, 'Water Saved']}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
 
-                      <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 rounded-full bg-blue-100 text-blue-600">
-                            <Droplets className="h-5 w-5" />
-                          </div>
-                          <h4 className="font-semibold text-gray-900">Water Saved</h4>
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-2xl font-bold text-blue-700">
-                            {Math.round(analytics.impactSummary.totalWaterSaved / 1000)} m³
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Equivalent to {analytics.impactSummary.equivalentShowers} showers
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Additional Metrics */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <p className="text-sm text-gray-600">Completion Rate</p>
-                        <p className="text-xl font-bold text-gray-900">
-                          {Math.round(analytics.completionRate)}%
-                        </p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <p className="text-sm text-gray-600">Avg Response Time</p>
-                        <p className="text-xl font-bold text-gray-900">
-                          {analytics.responseTimes.average}m
-                          <span className={cn(
-                            "ml-2 text-xs",
-                            analytics.responseTimes.trend === 'improving' ? 'text-emerald-600' : 
-                            analytics.responseTimes.trend === 'declining' ? 'text-red-600' : 'text-gray-600'
-                          )}>
-                            {analytics.responseTimes.trend === 'improving' ? '↓ Improving' : 
-                             analytics.responseTimes.trend === 'declining' ? '↑ Declining' : '→ Stable'}
-                          </span>
-                        </p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <p className="text-sm text-gray-600">Food Types</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {analytics.foodTypeDistribution.map((item) => (
-                            <Badge 
-                              key={item.type}
-                              variant="outline"
-                              className="text-xs text-gray-700 border-gray-300 bg-white"
-                            >
-                              {item.type}: {item.percentage}%
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : null}
-              </CardContent>
-            </Card>
-
+        {/* Additional Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <p className="text-sm font-medium text-gray-900">Completion Rate</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {Math.round(analytics.completionRate)}%
+            </p>
+          </div>
+          <div className="p-4 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+            <div className="flex items-center gap-3 mb-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <p className="text-sm font-medium text-gray-900">Avg Response Time</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {analytics.responseTimes.average}m
+              <span className={cn(
+                "ml-2 text-xs font-medium",
+                analytics.responseTimes.trend === 'improving' ? 'text-emerald-600' : 
+                analytics.responseTimes.trend === 'declining' ? 'text-red-600' : 'text-gray-600'
+              )}>
+                {analytics.responseTimes.trend === 'improving' ? '↓ Improving' : 
+                 analytics.responseTimes.trend === 'declining' ? '↑ Declining' : '→ Stable'}
+              </span>
+            </p>
+          </div>
+          <div className="p-4 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+            <div className="flex items-center gap-3 mb-2">
+              <Package className="h-5 w-5 text-purple-600" />
+              <p className="text-sm font-medium text-gray-900">Food Types</p>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {analytics.foodTypeDistribution.slice(0, 3).map((item) => (
+                <Badge 
+                  key={item.type}
+                  variant="outline"
+                  className="text-xs bg-white text-gray-700 border-gray-300"
+                >
+                  {item.type}: {item.percentage}%
+                </Badge>
+              ))}
+              {analytics.foodTypeDistribution.length > 3 && (
+                <Badge variant="outline" className="text-xs bg-white text-gray-500 border-gray-300">
+                  +{analytics.foodTypeDistribution.length - 3} more
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    ) : null}
+  </CardContent>
+</Card>
             {/* Recent Listings */}
             <Card className="bg-white border-gray-200 shadow-sm">
               <CardHeader>
