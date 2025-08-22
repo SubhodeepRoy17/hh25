@@ -26,15 +26,15 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-black/50"></div>
       </div>
 
-      <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto w-full">
+      <div className="relative z-10 text-center text-white px-4 w-full max-w-6xl mx-auto">
         <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-6">
           <Leaf className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="text-xs sm:text-sm">Zero-Waste Campus Initiative</span>
         </div>
         
-        {/* Extended background box to fit the title in one line */}
-        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mb-8 w-full max-w-[95%] mx-auto">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 whitespace-nowrap">
+        {/* Wider background box */}
+        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mb-8 w-full max-w-full mx-auto">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6">
             WELCOME TO SMART SURPLUS
           </h1>
 
@@ -42,13 +42,13 @@ export default function HeroSection() {
             Smart Food Redistribution for Zero-Waste Campus
           </h2>
 
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-4">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed">
             Connect surplus food from campus canteens, hostels, and events with students and staff in need. Track,
             redistribute, and manage food waste through our intelligent platform.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
           <Button
             size="lg"
             className="bg-orange-500 hover:bg-orange-600 rounded-full px-6 sm:px-8 w-full sm:w-auto"
