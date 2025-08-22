@@ -38,9 +38,9 @@ export async function notifyNewListing(listingId: string) {
     // Find receivers within 5km radius - FIXED: Properly handle location query
     const receivers = await UserModel.find({
       role: 'receiver',
-      isVerified: true, // Only notify verified users
+      isVerified: true,
       'location.geoPoint': {
-        $near: {
+        $nearSphere: {
           $geometry: listing.location.geoPoint,
           $maxDistance: 5000 // 5km radius in meters
         }
