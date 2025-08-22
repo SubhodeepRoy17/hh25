@@ -27,19 +27,13 @@ export default function HeroSection() {
       </div>
 
       <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto w-full">
-        {/* Transparent Welcome Box */}
-        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mb-8 max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-            Welcome to Smart Surplus
-          </h2>
-        </div>
 
         <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-6">
           <Leaf className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="text-xs sm:text-sm">Zero-Waste Campus Initiative</span>
         </div>
-
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6">SMART SURPLUS</h1>
+        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6">WELCOME TO SMART SURPLUS</h1>
 
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-6 text-blue-200">
           Smart Food Redistribution for Zero-Waste Campus
@@ -49,6 +43,7 @@ export default function HeroSection() {
           Connect surplus food from campus canteens, hostels, and events with students and staff in need. Track,
           redistribute, and manage food waste through our intelligent platform.
         </p>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
           <Button
