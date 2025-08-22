@@ -1,4 +1,3 @@
-//app/dashboard/receiver/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -29,6 +28,7 @@ import {
 import QrScannerModal from "@/components/receiver/qr-scanner-modal"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/hooks/useAuth"
+import { connectWallet, claimFoodOnBlockchain } from "@/lib/blockchain"
 
 interface FoodListing {
   _id: string
@@ -53,6 +53,7 @@ interface FoodListing {
   images: string[]
   interestedUsers?: number
   createdAt: Date
+  blockchainId?: number
 }
 
 interface ImpactStats {
@@ -66,7 +67,7 @@ interface ImpactStats {
 
 export default function ReceiverDashboardPage() {
   const router = useRouter()
-  const { user, logout } = useAuth() // Added logout from useAuth
+  const { user, logout } = useAuth()
   const { toast } = useToast()
   
   // State for search and filters
@@ -90,6 +91,8 @@ export default function ReceiverDashboardPage() {
   })
   const [locationError, setLocationError] = useState<string | null>(null)
   const [qrScanOpen, setQrScanOpen] = useState(false)
+  const [isWalletConnected, setIsWalletConnected] = useState(false)
+  const [claimingListingId, setClaimingListingId] = useState<string | null>(null)
 
   // Get user's current location with fallback
   useEffect(() => {
@@ -109,9 +112,45 @@ export default function ReceiverDashboardPage() {
         console.error("Geolocation error:", err)
         setLocationError("Using default location - enable location for accurate results")
       },
-      { timeout: 5000 } // Add timeout
+      { timeout: 5000 }
     )
   }, [])
+
+  // Check wallet connection
+  useEffect(() => {
+    const checkWalletConnection = async () => {
+      if (typeof window !== 'undefined' && window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            setIsWalletConnected(true);
+          }
+        } catch (error) {
+          console.error('Error checking wallet connection:', error);
+        }
+      }
+    };
+
+    checkWalletConnection();
+  }, []);
+
+  const handleConnectWallet = async () => {
+    try {
+      await connectWallet();
+      setIsWalletConnected(true);
+      toast({
+        title: "Wallet Connected",
+        description: "Your MetaMask wallet is now connected.",
+        variant: "default",
+      });
+    } catch (err) {
+      toast({
+        title: "Wallet Connection Failed",
+        description: "Please install MetaMask or check your connection.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch listings when filters or location change
   useEffect(() => {
@@ -143,7 +182,7 @@ export default function ReceiverDashboardPage() {
 
         if (!response.ok) {
           if (response.status === 401) {
-            logout() // Force logout if token is invalid
+            logout()
             throw new Error('Session expired - please login again')
           }
           throw new Error('Failed to fetch listings')
@@ -189,11 +228,33 @@ export default function ReceiverDashboardPage() {
     fetchImpactStats()
   }, [])
 
-  const handleClaim = async (listingId: string) => {
+  const handleClaim = async (listingId: string, blockchainId?: number) => {
+    setClaimingListingId(listingId);
+    
     try {
       const token = localStorage.getItem('authToken')
       if (!token) {
         throw new Error('Authentication required')
+      }
+
+      // Connect wallet if not already connected and listing has blockchain ID
+      if (blockchainId && !isWalletConnected) {
+        try {
+          await connectWallet();
+          setIsWalletConnected(true);
+        } catch (walletError) {
+          throw new Error('Please connect your wallet to claim this listing');
+        }
+      }
+
+      // Update blockchain if listing has a blockchain ID
+      if (blockchainId && isWalletConnected) {
+        try {
+          await claimFoodOnBlockchain(blockchainId);
+        } catch (blockchainError) {
+          console.error('Blockchain claim failed:', blockchainError);
+          throw new Error('Failed to claim on blockchain. Please ensure your wallet is connected.');
+        }
       }
 
       const response = await fetch(`/api/listings/${listingId}/claim`, {
@@ -231,6 +292,8 @@ export default function ReceiverDashboardPage() {
       if (err instanceof Error && err.message.includes('Session expired')) {
         logout()
       }
+    } finally {
+      setClaimingListingId(null);
     }
   }
 
@@ -338,6 +401,27 @@ export default function ReceiverDashboardPage() {
           </div>
         )}
 
+        {/* Wallet Connection Banner */}
+        {!isWalletConnected && (
+          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-yellow-100">Connect your wallet</h3>
+                <p className="text-yellow-200 text-sm">
+                  To claim food listings on the blockchain, please connect your MetaMask wallet.
+                </p>
+              </div>
+              <Button
+                onClick={handleConnectWallet}
+                className="bg-yellow-500 hover:bg-yellow-400 text-black"
+                size="sm"
+              >
+                Connect Wallet
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-[1fr_350px] gap-6">
           {/* Left Column - Food Discovery */}
           <div className="space-y-6">
@@ -417,6 +501,11 @@ export default function ReceiverDashboardPage() {
                           <p className="text-emerald-300 text-sm font-medium mb-2">{listing.donor.name}</p>
                           <div className="flex flex-wrap gap-2 mb-3">
                             {listing.types.map((type) => getFoodTypeBadge(type))}
+                            {listing.blockchainId && (
+                              <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                                On Blockchain
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -448,10 +537,18 @@ export default function ReceiverDashboardPage() {
 
                       <div className="flex gap-3">
                         <Button
-                          onClick={() => handleClaim(listing._id)}
-                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                          onClick={() => handleClaim(listing._id, listing.blockchainId)}
+                          disabled={claimingListingId === listing._id}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
                         >
-                          Claim Food
+                          {claimingListingId === listing._id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Claiming...
+                            </>
+                          ) : (
+                            'Claim Food'
+                          )}
                         </Button>
                       </div>
                     </CardContent>
@@ -553,6 +650,15 @@ export default function ReceiverDashboardPage() {
                   <Bell className="h-4 w-4 mr-3" />
                   View All Notifications
                 </Button>
+                {!isWalletConnected && (
+                  <Button
+                    onClick={handleConnectWallet}
+                    className="w-full justify-start bg-yellow-500 hover:bg-yellow-400 text-black"
+                  >
+                    <Package className="h-4 w-4 mr-3" />
+                    Connect Wallet
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>

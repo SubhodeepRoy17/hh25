@@ -6,7 +6,8 @@ import { verifyToken } from '@/lib/auth'
 import { notifyClaim } from '@/lib/services/notifications'
 import User from '@/lib/models/User'
 import Receiver from '@/lib/models/Receiver'
-import { sendClaimConfirmationEmail } from '@/lib/services/email' // We'll create this
+import { sendClaimConfirmationEmail } from '@/lib/services/email'
+import { claimFoodOnBlockchain } from '@/lib/blockchain'
 
 export async function POST(
   request: Request,
@@ -73,6 +74,19 @@ export async function POST(
       verified: false
     }
 
+    // Update blockchain if listing has a blockchain ID
+    if (existingListing.blockchainId) {
+      try {
+        await claimFoodOnBlockchain(existingListing.blockchainId);
+      } catch (blockchainError) {
+        console.error('Blockchain claim failed:', blockchainError);
+        return NextResponse.json(
+          { error: 'Failed to claim on blockchain. Please ensure your wallet is connected.' },
+          { status: 500 }
+        );
+      }
+    }
+
     // Update listing status
     const listing = await FoodListing.findByIdAndUpdate(
       params.listingId,
@@ -132,7 +146,8 @@ export async function POST(
         availableUntil: listing.availableUntil,
         location: listing.location.address,
         donorName: (listing.createdBy as any).name,
-        expiresAt: qrCodeData.expiresAt
+        expiresAt: qrCodeData.expiresAt,
+        blockchainId: listing.blockchainId
       }
     })
 

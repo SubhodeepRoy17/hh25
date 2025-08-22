@@ -1,4 +1,3 @@
-//lib/models/FoodListing.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export type FoodType = 'cooked' | 'produce' | 'bakery' | 'packaged' | 'beverages' | 'mixed' | 'vegetarian' | 'vegan';
@@ -52,6 +51,9 @@ export interface IFoodListing extends Document {
   claimedAt?: Date | null;
   expiryNotified: boolean;
   qrCodeData?: QRCodeData;
+  // Blockchain fields
+  blockchainId?: number;
+  txHash?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -244,6 +246,15 @@ const FoodListingSchema = new Schema<IFoodListing>(
     },
     qrCodeData: {
       type: QRCodeDataSchema
+    },
+    // Blockchain fields
+    blockchainId: {
+      type: Number,
+      unique: true,
+      sparse: true,
+    },
+    txHash: {
+      type: String,
     }
   },
   { 

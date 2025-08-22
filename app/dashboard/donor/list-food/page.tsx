@@ -26,6 +26,7 @@ import {
   ImageIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { connectWallet } from "@/lib/blockchain"
 
 type QuantityUnit = "meals" | "kg" | "trays" | "boxes"
 type Freshness = "fresh-hot" | "fresh-chilled" | "frozen" | "room-temp" | "packaged"
@@ -54,6 +55,43 @@ function ListingFoodPageContent() {
   const [files, setFiles] = useState<FileList | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { user } = useAuth()
+  const [isWalletConnected, setIsWalletConnected] = useState(false)
+
+  // Check if wallet is connected on component mount
+  useEffect(() => {
+    const checkWalletConnection = async () => {
+      if (typeof window !== 'undefined' && window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            setIsWalletConnected(true);
+          }
+        } catch (error) {
+          console.error('Error checking wallet connection:', error);
+        }
+      }
+    };
+
+    checkWalletConnection();
+  }, []);
+
+  const handleConnectWallet = async () => {
+    try {
+      await connectWallet();
+      setIsWalletConnected(true);
+      toast({
+        title: "Wallet Connected",
+        description: "Your MetaMask wallet is now connected.",
+        variant: "default",
+      });
+    } catch (err) {
+      toast({
+        title: "Wallet Connection Failed",
+        description: "Please install MetaMask or check your connection.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch location suggestions from OpenStreetMap Nominatim API
   const fetchLocationSuggestions = async (query: string) => {
@@ -71,7 +109,6 @@ function ListingFoodPageContent() {
       setLocationSuggestions(data);
     } catch (error) {
       console.error("Error fetching location suggestions:", error);
-      // Optionally show user-friendly error message
     }
   };
 
@@ -92,19 +129,6 @@ function ListingFoodPageContent() {
       lng: parseFloat(suggestion.lon)
     });
     setShowSuggestions(false);
-    
-    // Log to verify
-    console.log("Selected location:", {
-      address: suggestion.display_name,
-      coordinates: {
-        lat: parseFloat(suggestion.lat),
-        lng: parseFloat(suggestion.lon)
-      },
-      geoPoint: {
-        type: "Point",
-        coordinates: [parseFloat(suggestion.lon), parseFloat(suggestion.lat)]
-      }
-    });
   };
 
   const toggleType = (val: FoodType) => {
@@ -140,6 +164,16 @@ function ListingFoodPageContent() {
       router.push("/auth/login")
       return
     }
+
+    if (!isWalletConnected) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to publish on blockchain",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -154,9 +188,9 @@ function ListingFoodPageContent() {
       formData.append('location', JSON.stringify({
         address: location,
         coordinates: locationCoords,
-        geoPoint: {  // Add this
+        geoPoint: {
           type: "Point",
-          coordinates: [locationCoords.lng, locationCoords.lat]  // Note: [lng, lat]
+          coordinates: [locationCoords.lng, locationCoords.lat]
         }
       }))
       formData.append('instructions', instructions)
@@ -185,7 +219,7 @@ function ListingFoodPageContent() {
 
       toast({
         title: "Listing published",
-        description: "Receivers nearby will be notified.",
+        description: "Your food listing has been published on the blockchain!",
       })
 
       router.push("/dashboard/donor/list-food/success")
@@ -228,59 +262,76 @@ function ListingFoodPageContent() {
   ]
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-7xl">
-        <div className="mb-8">
-          <Badge className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-100 text-emerald-700 border-emerald-200 font-medium">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-            New listing
-          </Badge>
+    <main className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="mb-6">
+          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-100">New listing</Badge>
         </div>
-
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 md:gap-6 mb-10">
-          <div className="space-y-3">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
-              List surplus <span className="text-emerald-600">food</span>
-            </h1>
-            <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 md:gap-6 mb-6">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">List surplus food</h1>
+            <p className="text-gray-300 mt-1">
               Canteens, hostels, and event organizers can share excess food with the community.
             </p>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1.1fr_.9fr] gap-8">
+        {/* Wallet Connection Banner */}
+        {!isWalletConnected && (
+          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-yellow-100">Connect your wallet</h3>
+                <p className="text-yellow-200 text-sm">
+                  To publish your food listing on the blockchain, please connect your MetaMask wallet.
+                </p>
+              </div>
+              <Button
+                onClick={handleConnectWallet}
+                className="bg-yellow-500 hover:bg-yellow-400 text-black"
+              >
+                Connect Wallet
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Blockchain Status */}
+        {isWalletConnected && (
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+            <div className="flex items-center">
+              <CheckCircle2 className="h-5 w-5 text-emerald-300 mr-2" />
+              <span className="text-emerald-100">Wallet connected. Your listing will be published on the blockchain.</span>
+            </div>
+          </div>
+        )}
+
+        <div className="grid lg:grid-cols-[1.1fr_.9fr] gap-6">
           {/* Left column: Form */}
-          <form onSubmit={onSubmit} className="space-y-8">
-            <Card className="bg-white border-gray-200 shadow-lg">
-              <CardHeader className="pb-6">
-                <CardTitle className="flex items-center gap-3 text-gray-900 text-xl">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
-                    <Utensils className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  Food Details
+          <form onSubmit={onSubmit} className="space-y-6">
+            <Card className="bg-black from-emerald-900/10 to-emerald-700/5 border-gray-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Utensils className="h-5 w-5 text-emerald-300" />
+                  Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="title" className="text-gray-700 font-medium">
-                    Title
-                  </Label>
+              <CardContent className="space-y-5 text-white">
+                <div>
+                  <Label htmlFor="title">Title</Label>
                   <Input
                     id="title"
                     placeholder="e.g., 60 hot vegetarian meals from campus canteen"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className={cn(
-                      "bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 h-12",
-                      errors.title && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-                    )}
+                    className={cn("mt-1", errors.title && "border-red-500")}
                   />
-                  {errors.title && <p className="text-red-500 text-sm">{errors.title}</p>}
+                  {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
                 </div>
 
-                <div className="space-y-3">
-                  <Label className="text-gray-700 font-medium">Food type</Label>
-                  <div className="flex flex-wrap gap-3">
+                <div>
+                  <Label>Food type</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {typeChips.map((t) => {
                       const active = types.includes(t.key)
                       return (
@@ -289,10 +340,10 @@ function ListingFoodPageContent() {
                           type="button"
                           onClick={() => toggleType(t.key)}
                           className={cn(
-                            "px-4 py-2.5 rounded-xl border text-sm font-medium inline-flex items-center gap-2 transition-all duration-200",
+                            "px-3 py-1.5 rounded-full border text-sm inline-flex items-center gap-1.5",
                             active
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md"
-                              : "border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700",
+                              ? "border-emerald-500 bg-emerald-500/10 text-emerald-100"
+                              : "border-gray-700 hover:border-emerald-400 text-gray-200",
                           )}
                           aria-pressed={active}
                         >
@@ -302,14 +353,12 @@ function ListingFoodPageContent() {
                       )
                     })}
                   </div>
-                  {errors.types && <p className="text-red-500 text-sm">{errors.types}</p>}
+                  {errors.types && <p className="text-red-400 text-sm mt-1">{errors.types}</p>}
                 </div>
 
-                <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-4 items-end">
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity" className="text-gray-700 font-medium">
-                      Quantity
-                    </Label>
+                <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
+                  <div>
+                    <Label htmlFor="quantity">Quantity</Label>
                     <Input
                       id="quantity"
                       inputMode="numeric"
@@ -317,45 +366,32 @@ function ListingFoodPageContent() {
                       placeholder="e.g., 60"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value === "" ? "" : Number(e.target.value))}
-                      className={cn(
-                        "bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 h-12",
-                        errors.quantity && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-                      )}
+                      className={cn("mt-1", errors.quantity && "border-red-500")}
                     />
-                    {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity}</p>}
+                    {errors.quantity && <p className="text-red-400 text-sm mt-1">{errors.quantity}</p>}
                   </div>
 
-                  <div className="hidden sm:block text-center text-gray-500 pb-4 font-medium">in</div>
+                  <div className="hidden sm:block text-center text-gray-400 pb-2">in</div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="unit" className="text-gray-700 font-medium">
-                      Unit
-                    </Label>
+                  <div>
+                    <Label>Unit</Label>
                     <Select value={unit} onValueChange={(v) => setUnit(v as QuantityUnit)}>
-                      <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:border-emerald-500 focus:ring-emerald-500/20 h-12">
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select unit" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200">
-                        <SelectItem value="meals" className="text-gray-900 hover:bg-gray-50">
-                          Meals
-                        </SelectItem>
-                        <SelectItem value="kg" className="text-gray-900 hover:bg-gray-50">
-                          kg
-                        </SelectItem>
-                        <SelectItem value="trays" className="text-gray-900 hover:bg-gray-50">
-                          Trays
-                        </SelectItem>
-                        <SelectItem value="boxes" className="text-gray-900 hover:bg-gray-50">
-                          Boxes
-                        </SelectItem>
+                      <SelectContent>
+                        <SelectItem value="meals">Meals</SelectItem>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="trays">Trays</SelectItem>
+                        <SelectItem value="boxes">Boxes</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Label className="text-gray-700 font-medium">Freshness status</Label>
-                  <div className="grid sm:grid-cols-3 gap-3">
+                <div>
+                  <Label>Freshness status</Label>
+                  <div className="mt-2 grid sm:grid-cols-3 gap-2">
                     {(
                       [
                         ["fresh-hot", "Fresh (hot)"],
@@ -372,10 +408,10 @@ function ListingFoodPageContent() {
                           type="button"
                           onClick={() => setFreshness(val)}
                           className={cn(
-                            "px-4 py-3 rounded-xl border text-sm font-medium flex items-center gap-2 justify-center transition-all duration-200",
+                            "px-3 py-2 rounded-md border text-sm flex items-center gap-2 justify-center",
                             active
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md"
-                              : "border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700",
+                              ? "border-emerald-500 bg-emerald-500/10 text-emerald-100"
+                              : "border-gray-700 hover:border-emerald-400 text-gray-200",
                           )}
                           aria-pressed={active}
                         >
@@ -389,95 +425,63 @@ function ListingFoodPageContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-gray-200 shadow-lg">
-              <CardHeader className="pb-6">
-                <CardTitle className="flex items-center gap-3 text-gray-900 text-xl">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <CalendarRange className="h-5 w-5 text-blue-600" />
-                  </div>
-                  Availability Window
+            <Card className="bg-black from-emerald-900/10 to-emerald-700/5 border-gray-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <CalendarRange className="h-5 w-5 text-white" />
+                  Availability window
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="from" className="text-gray-700 font-medium">
-                      Available from
-                    </Label>
-                    <Input
-                      id="from"
-                      type="datetime-local"
-                      value={availableFrom}
-                      onChange={(e) => setAvailableFrom(e.target.value)}
-                      className={cn(
-                        "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500/20 h-12",
-                        errors.availableFrom && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-                      )}
-                    />
-                    {errors.availableFrom && <p className="text-red-500 text-sm">{errors.availableFrom}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="until" className="text-gray-700 font-medium">
-                      Available until
-                    </Label>
-                    <Input
-                      id="until"
-                      type="datetime-local"
-                      value={availableUntil}
-                      onChange={(e) => setAvailableUntil(e.target.value)}
-                      className={cn(
-                        "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500/20 h-12",
-                        errors.availableUntil && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-                      )}
-                    />
-                    {errors.availableUntil && <p className="text-red-500 text-sm">{errors.availableUntil}</p>}
-                  </div>
+              <CardContent className="grid sm:grid-cols-2 gap-4 text-white">
+                <div>
+                  <Label htmlFor="from">Available from</Label>
+                  <Input
+                    id="from"
+                    type="datetime-local"
+                    value={availableFrom}
+                    onChange={(e) => setAvailableFrom(e.target.value)}
+                    className={cn("mt-1", errors.availableFrom && "border-red-500")}
+                  />
+                  {errors.availableFrom && <p className="text-red-400 text-sm mt-1">{errors.availableFrom}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="until">Available until</Label>
+                  <Input
+                    id="until"
+                    type="datetime-local"
+                    value={availableUntil}
+                    onChange={(e) => setAvailableUntil(e.target.value)}
+                    className={cn("mt-1", errors.availableUntil && "border-red-500")}
+                  />
+                  {errors.availableUntil && <p className="text-red-400 text-sm mt-1">{errors.availableUntil}</p>}
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        id="allowPartial"
-                        checked={allowPartial}
-                        onCheckedChange={setAllowPartial}
-                        className="data-[state=checked]:bg-emerald-500"
-                      />
-                      <Label htmlFor="allowPartial" className="text-gray-700 font-medium">
-                        Allow partial pickups
-                      </Label>
+                <div className="sm:col-span-2">
+                  <div className="flex items-center justify-between gap-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <Switch id="allowPartial" checked={allowPartial} onCheckedChange={setAllowPartial} />
+                      <Label htmlFor="allowPartial">Allow partial pickups</Label>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        id="insulated"
-                        checked={requireInsulated}
-                        onCheckedChange={setRequireInsulated}
-                        className="data-[state=checked]:bg-orange-500"
-                      />
-                      <Label htmlFor="insulated" className="text-gray-700 font-medium">
-                        Require insulated transport
-                      </Label>
+                    <div className="flex items-center gap-2">
+                      <Switch id="insulated" checked={requireInsulated} onCheckedChange={setRequireInsulated} />
+                      <Label htmlFor="insulated">Require insulated transport</Label>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-gray-200 shadow-lg">
-              <CardHeader className="pb-6">
-                <CardTitle className="flex items-center gap-3 text-gray-900 text-xl">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <MapPin className="h-5 w-5 text-orange-600" />
-                  </div>
-                  Pickup & Instructions
+            <Card className="bg-black bg-gradient-to-br from-emerald-900/10 to-emerald-700/5 border border-gray-800 rounded-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <MapPin className="h-5 w-5 text-emerald-300" />
+                  <span className="text-lg font-semibold">Pickup & Instructions</span>
                 </CardTitle>
               </CardHeader>
-
-              <CardContent className="space-y-6">
+              
+              <CardContent className="space-y-4 text-white">
                 <div className="space-y-2 relative">
-                  <Label htmlFor="location" className="text-gray-700 font-medium">
+                  <Label htmlFor="location" className="text-sm font-medium text-gray-300">
                     Pickup location
                   </Label>
                   <div className="relative">
@@ -491,16 +495,16 @@ function ListingFoodPageContent() {
                       }}
                       onFocus={() => setShowSuggestions(true)}
                       className={cn(
-                        "bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500/20 h-12",
-                        errors.location && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+                        "bg-gray-900/50 border-gray-700 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30",
+                        errors.location && "border-red-500 focus:border-red-500 focus:ring-red-500/30"
                       )}
                     />
                     {showSuggestions && locationSuggestions.length > 0 && (
-                      <div className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-2xl max-h-60 overflow-auto">
+                      <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
                         {locationSuggestions.map((suggestion, index) => (
                           <div
                             key={index}
-                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                            className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-sm"
                             onClick={() => handleLocationSelect(suggestion)}
                           >
                             {suggestion.display_name}
@@ -509,11 +513,13 @@ function ListingFoodPageContent() {
                       </div>
                     )}
                   </div>
-                  {errors.location && <p className="text-red-500 text-sm">{errors.location}</p>}
+                  {errors.location && (
+                    <p className="text-red-400 text-xs mt-1">{errors.location}</p>
+                  )}
                 </div>
-
+                
                 <div className="space-y-2">
-                  <Label htmlFor="instructions" className="text-gray-700 font-medium">
+                  <Label htmlFor="instructions" className="text-sm font-medium text-gray-300">
                     Notes for pickup
                   </Label>
                   <Textarea
@@ -521,25 +527,27 @@ function ListingFoodPageContent() {
                     placeholder="Bring insulated cambros. Call security at gate B. Avoid 2–3pm rush."
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500/20 min-h-[120px] resize-none"
+                    className="bg-gray-900/50 border-gray-700 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 min-h-[100px]"
                   />
                 </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="photos" className="text-gray-700 font-medium">
+                
+                <div className="space-y-2">
+                  <Label htmlFor="photos" className="text-sm font-medium text-gray-300">
                     Photos (optional)
                   </Label>
-                  <div className="space-y-3">
-                    <Input
-                      id="photos"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) => setFiles(e.target.files)}
-                      className="file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-600 transition-colors cursor-pointer bg-white border-gray-300 text-gray-700 h-12"
-                    />
-                    <div className="flex items-center gap-2 text-gray-600 text-sm bg-gray-50 rounded-lg p-3">
-                      <ImageIcon className="h-4 w-4" />
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <Input
+                        id="photos"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => setFiles(e.target.files)}
+                        className="file:mr-3 file:rounded-sm file:border-0 file:bg-emerald-500/90 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-emerald-600 transition-colors cursor-pointer bg-gray-900/50 border-gray-700"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-400 text-xs">
+                      <ImageIcon className="h-3.5 w-3.5" />
                       <span>PNG, JPG up to 5MB each</span>
                     </div>
                   </div>
@@ -549,63 +557,63 @@ function ListingFoodPageContent() {
 
             <Button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting || !isWalletConnected}
+              className="w-full h-12 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
             >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Publishing...
-                </div>
-              ) : (
-                "Publish listing"
-              )}
+              {isSubmitting ? "Publishing on Blockchain..." : "Publish listing"}
             </Button>
           </form>
 
           {/* Right column: Preview */}
           <aside className="space-y-6">
-            <Card className="bg-white border-gray-200 shadow-lg sticky top-6">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-gray-900 text-xl">Live Preview</CardTitle>
+            <Card className="bg-white/5 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-white">Preview</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-6 space-y-4">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-emerald-100 rounded-lg">
-                        <Utensils className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <p className="font-semibold text-gray-900 text-lg">{title || "Untitled listing"}</p>
+                    <div className="flex items-center gap-2">
+                      <Utensils className="h-4 w-4 text-emerald-300" />
+                      <p className="font-medium">{title || "Untitled listing"}</p>
                     </div>
-                    <Badge className="border-emerald-300 bg-emerald-100 text-emerald-700 font-medium">Draft</Badge>
+                    <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-100">Draft</Badge>
                   </div>
 
-                  <Separator className="bg-emerald-200" />
+                  <Separator className="my-3 bg-emerald-500/20" />
 
-                  <div className="space-y-3 text-gray-700">
-                    <div className="flex items-center gap-3">
-                      <Package className="h-5 w-5 text-emerald-600" />
-                      <span className="font-medium">
+                  <div className="space-y-2 text-sm text-emerald-100/90">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      <span>
                         {quantity || 0} {unitLabel[unit]}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Thermometer className="h-5 w-5 text-blue-600" />
-                      <span className="font-medium">{freshnessLabel[freshness]}</span>
+                    <div className="flex items-center gap-2">
+                      <Thermometer className="h-4 w-4" />
+                      <span>{freshnessLabel[freshness]}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Clock4 className="h-5 w-5 text-orange-600" />
-                      <span className="text-sm">
+                    <div className="flex items-center gap-2">
+                      <Clock4 className="h-4 w-4" />
+                      <span>
                         {availableFrom ? new Date(availableFrom).toLocaleString() : "Start time"} —{" "}
                         {availableUntil ? new Date(availableUntil).toLocaleString() : "End Time"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-orange-600" />
-                      <span className="truncate text-sm">{location || "Pickup location"}</span>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span className="truncate">{location || "Pickup location"}</span>
                     </div>
                   </div>
+
+                  {isWalletConnected && (
+                    <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                      <div className="flex items-center gap-2 text-xs text-emerald-300">
+                        <CheckCircle2 className="h-3 w-3" />
+                        <span>Will be published on blockchain</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

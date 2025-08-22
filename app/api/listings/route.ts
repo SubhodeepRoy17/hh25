@@ -1,4 +1,3 @@
-//app\api\listings\route.ts
 import { NextResponse } from 'next/server'
 import FoodListing, { FoodType } from '@/lib/models/FoodListing'
 import connectDB from '@/lib/db'
@@ -7,6 +6,7 @@ import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/auth'
 import sanitizeHtml from 'sanitize-html'
 import { notifyNewListing } from '@/lib/services/notifications'
+import { listFoodOnBlockchain } from '@/lib/blockchain'
 
 // Type for listing response
 interface ListingResponse {
@@ -255,7 +255,26 @@ export async function POST(req: Request) {
 
     await listing.save()
 
-    // Send notifications to nearby receivers - FIXED: Use await and proper error handling
+    // Add to blockchain
+    try {
+      const blockchainId = await listFoodOnBlockchain(
+        title,
+        instructions,
+        Number(quantity),
+        Math.floor(availableUntilDate.getTime() / 1000),
+        parsedLocation.address
+      );
+
+      // Update the database record with blockchain info
+      listing.blockchainId = blockchainId;
+      await listing.save();
+
+    } catch (blockchainError) {
+      console.error('Blockchain transaction failed:', blockchainError);
+      // Don't fail the request if blockchain fails, but log it
+    }
+
+    // Send notifications to nearby receivers
     try {
       const notifications = await notifyNewListing(listing._id.toString());
       console.log(`New listing notifications sent successfully: ${notifications.length} notifications`);
@@ -270,7 +289,8 @@ export async function POST(req: Request) {
         id: listing._id,
         title: listing.title,
         status: listing.status,
-        createdAt: listing.createdAt
+        createdAt: listing.createdAt,
+        blockchainId: listing.blockchainId
       } 
     }, { status: 201 })
   } catch (error) {
