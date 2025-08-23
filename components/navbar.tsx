@@ -27,7 +27,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
   const handleClick = () => {
-    router.push("/contactus")
+    router.push("./contactus")
   }
 
   return (
