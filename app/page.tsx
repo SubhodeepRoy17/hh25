@@ -6,6 +6,7 @@ import HeroSection from "../components/hero-section"
 import Features from "../components/features"
 import RealImpactStories from "../components/real-stories"
 import Footer from "../components/footer"
+import Testimonials from "@/components/testimonials"
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -16,6 +17,7 @@ export default function Page() {
       <Navbar isLoggedIn={isLoggedIn} userType={userType} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />
       <HeroSection />
       <Features />
+      <Testimonials />
       <RealImpactStories />
       <Footer />
     </div>
