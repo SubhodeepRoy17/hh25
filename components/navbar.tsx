@@ -26,8 +26,9 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
   const [resourcesDropdownOpen, setResourcesDropdownOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
-  const handleClick = () => {
-    router.push("./contactus")
+
+  const handleContactSalesClick = () => {
+    router.push("/contactus")
   }
 
   return (
@@ -35,10 +36,12 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-md">
-              <Leaf className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-sm sm:text-base">SMART SURPLUS</span>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-md">
+                <Leaf className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-semibold text-sm sm:text-base">SMART SURPLUS</span>
+            </Link>
           </div>
 
           <div className="hidden lg:flex items-center gap-1 flex-1 justify-center">
@@ -46,8 +49,9 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
               variant="ghost"
               size="sm"
               className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
+              asChild
             >
-              Home
+              <Link href="/">Home</Link>
             </Button>
             <div
               className="relative"
@@ -165,13 +169,14 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
               variant="ghost"
               size="sm"
               className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
+              asChild
             >
-              Pricing
+              <Link href="/pricing">Pricing</Link>
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={handleClick}
+              onClick={handleContactSalesClick}
               className="text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-full px-4 py-2 transition-all duration-300 shadow-md hover:shadow-lg border-0 hover:scale-105"
             >
               Contact Sales
@@ -180,8 +185,9 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
               variant="ghost"
               size="sm"
               className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
+              asChild
             >
-              Help
+              <Link href="/help">Help</Link>
             </Button>
           </div>
 
@@ -192,9 +198,12 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                   variant="ghost"
                   size="sm"
                   className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
+                  asChild
                 >
-                  <Bell className="w-4 h-4 mr-1" />
-                  <span className="hidden lg:inline">Notifications</span>
+                  <Link href="/notifications">
+                    <Bell className="w-4 h-4 mr-1" />
+                    <span className="hidden lg:inline">Notifications</span>
+                  </Link>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -270,8 +279,8 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-green-700 py-4">
             <div className="flex flex-col space-y-2">
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
-                Home
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700" asChild>
+                <Link href="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
               </Button>
               <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Features
@@ -282,26 +291,43 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
               <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Resources
               </Button>
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
-                Pricing
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700" asChild>
+                <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
               </Button>
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
-                Help
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white justify-start hover:bg-green-700"
+                onClick={() => {
+                  handleContactSalesClick();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Contact Sales
+              </Button>
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700" asChild>
+                <Link href="/help" onClick={() => setMobileMenuOpen(false)}>Help</Link>
               </Button>
               <div className="border-t border-green-700 pt-2 mt-2">
                 {isLoggedIn ? (
                   <>
-                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
-                      <Bell className="w-4 h-4 mr-2" />
-                      Notifications
+                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700" asChild>
+                      <Link href="/notifications" onClick={() => setMobileMenuOpen(false)}>
+                        <Bell className="w-4 h-4 mr-2" />
+                        Notifications
+                      </Link>
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
+                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700" asChild>
+                      <Link href={`/${userType}/settings`} onClick={() => setMobileMenuOpen(false)}>
+                        <User className="w-4 h-4 mr-2" />
+                        Profile
+                      </Link>
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
+                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700" asChild>
+                      <Link href={`/${userType}/settings`} onClick={() => setMobileMenuOpen(false)}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Settings
+                      </Link>
                     </Button>
                     <Button
                       variant="ghost"
@@ -324,7 +350,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                     className="text-white border-white/30 hover:bg-white hover:text-green-800 w-full justify-start bg-transparent"
                     asChild
                   >
-                    <Link href="/auth/login">
+                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
                       <User className="w-4 h-4 mr-2" />
                       Sign In
                     </Link>
