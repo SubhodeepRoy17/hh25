@@ -27,6 +27,7 @@ import {
   Heart,
   Award,
   Sparkles,
+  ExternalLink,
 } from "lucide-react"
 import QrScannerModal from "@/components/receiver/qr-scanner-modal"
 import { useToast } from "@/components/ui/use-toast"
@@ -571,10 +572,15 @@ export default function ReceiverDashboardPage() {
                         </Button>
                         <Button
                           variant="outline"
-                          className="border-border bg-card hover:bg-muted text-card-foreground font-medium h-12 px-6 shadow-sm"
-                          onClick={() => router.push(`/listings/${listing._id}`)}
+                          className="border-border bg-card hover:bg-muted text-card-foreground font-medium h-12 px-6 shadow-sm flex items-center gap-2"
+                          onClick={() => {
+                            // Open in Google Maps with the listing's coordinates
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${listing.location.coordinates.lat},${listing.location.coordinates.lng}`
+                            window.open(mapsUrl, '_blank', 'noopener,noreferrer')
+                          }}
                         >
-                          View Details
+                          <ExternalLink className="h-4 w-4" />
+                          Open in Map
                         </Button>
                       </div>
                     </CardContent>
