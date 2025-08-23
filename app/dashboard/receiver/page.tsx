@@ -23,7 +23,10 @@ import {
   LogOut,
   Utensils,
   AlertCircle,
-  Loader2
+  Loader2,
+  Heart,
+  Award,
+  Sparkles,
 } from "lucide-react"
 import QrScannerModal from "@/components/receiver/qr-scanner-modal"
 import { useToast } from "@/components/ui/use-toast"
@@ -322,10 +325,10 @@ export default function ReceiverDashboardPage() {
 
   if (loading && !listings.length) {
     return (
-      <main className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-6">
+      <main className="min-h-screen bg-background text-foreground">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         </div>
       </main>
@@ -334,17 +337,17 @@ export default function ReceiverDashboardPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-6">
-          <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 text-red-200">
+      <main className="min-h-screen bg-background text-foreground">
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 text-destructive">
             <AlertCircle className="h-5 w-5 inline mr-2" />
             {error}
             <Button
               onClick={() => window.location.reload()}
-              className="mt-2 bg-transparent border-red-500/40 text-red-100 hover:bg-red-500/10"
+              className="mt-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               size="sm"
             >
-              Retry
+              Try Again
             </Button>
           </div>
         </div>
@@ -353,29 +356,29 @@ export default function ReceiverDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Food Discovery</h1>
-            <p className="text-gray-300 text-sm">Find surplus food near you</p>
+    <main className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background text-foreground">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <Utensils className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground">Discover Food Near You</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  <p className="text-muted-foreground text-lg">Join our community in reducing food waste</p>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
-              onClick={handleQrScan}
-              className="border-emerald-500/40 bg-transparent text-emerald-100"
-            >
-              <QrCode className="h-4 w-4 mr-2" />
-              Scan QR
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
               onClick={() => router.push("/dashboard/receiver/notifications")}
-              className="border-emerald-500/40 bg-transparent text-emerald-100 relative"
+              className="border-accent/30 bg-card hover:bg-accent/10 text-accent font-medium shadow-sm relative"
             >
               <Bell className="h-4 w-4" />
             </Button>
@@ -387,7 +390,7 @@ export default function ReceiverDashboardPage() {
               }}
               variant="outline"
               size="sm"
-              className="border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300"
+              className="border-destructive/30 bg-destructive/5 hover:bg-destructive/10 text-destructive shadow-sm"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -395,7 +398,7 @@ export default function ReceiverDashboardPage() {
         </div>
 
         {locationError && (
-          <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3 mb-6 text-yellow-200">
+          <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 mb-8 text-accent-foreground shadow-sm">
             <AlertCircle className="h-5 w-5 inline mr-2" />
             {locationError}
           </div>
@@ -403,17 +406,17 @@ export default function ReceiverDashboardPage() {
 
         {/* Wallet Connection Banner */}
         {!isWalletConnected && (
-          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <div className="mb-8 p-4 bg-accent/10 border border-accent/20 rounded-xl">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-yellow-100">Connect your wallet</h3>
-                <p className="text-yellow-200 text-sm">
+                <h3 className="font-semibold text-accent-foreground">Connect your wallet</h3>
+                <p className="text-muted-foreground text-sm">
                   To claim food listings on the blockchain, please connect your MetaMask wallet.
                 </p>
               </div>
               <Button
                 onClick={handleConnectWallet}
-                className="bg-yellow-500 hover:bg-yellow-400 text-black"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
                 size="sm"
               >
                 Connect Wallet
@@ -422,26 +425,25 @@ export default function ReceiverDashboardPage() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-[1fr_350px] gap-6">
+        <div className="grid lg:grid-cols-[1fr_380px] gap-8">
           {/* Left Column - Food Discovery */}
           <div className="space-y-6">
-            {/* Search and Filters */}
-            <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800">
-              <CardContent className="p-4">
-                <div className="flex gap-3 mb-4">
+            <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex gap-4 mb-6">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
-                      placeholder="Search by food, donor, or location..."
+                      placeholder="Search by food type, donor, or location..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      className="pl-12 h-12 text-base bg-input border-border/50 focus:border-primary shadow-sm"
                     />
                   </div>
                   <Button
                     variant="outline"
                     onClick={() => setShowFilters(!showFilters)}
-                    className="border-emerald-500/40 bg-transparent text-emerald-100"
+                    className="h-12 px-6 border-primary/30 bg-card hover:bg-primary/10 text-primary font-medium shadow-sm"
                   >
                     <Filter className="h-4 w-4 mr-2" />
                     Filters
@@ -449,26 +451,26 @@ export default function ReceiverDashboardPage() {
                 </div>
 
                 {showFilters && (
-                  <div className="border-t border-gray-800 pt-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="veg-only">Vegetarian only</Label>
-                      <Switch 
-                        id="veg-only" 
-                        checked={vegOnly} 
-                        onCheckedChange={setVegOnly} 
-                      />
+                  <div className="border-t border-border/50 pt-6 space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                      <Label htmlFor="veg-only" className="text-base font-medium text-card-foreground">
+                        Vegetarian only
+                      </Label>
+                      <Switch id="veg-only" checked={vegOnly} onCheckedChange={setVegOnly} />
                     </div>
-                    <div>
-                      <Label>Max distance: {maxDistance}km</Label>
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <Label className="text-base font-medium text-card-foreground">
+                        Max distance: {maxDistance}km
+                      </Label>
                       <input
                         type="range"
                         min="1"
                         max="20"
                         value={maxDistance}
                         onChange={(e) => setMaxDistance(Number(e.target.value))}
-                        className="w-full mt-2 accent-emerald-500"
+                        className="w-full mt-3 accent-primary"
                       />
-                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <div className="flex justify-between text-sm text-muted-foreground mt-2">
                         <span>1km</span>
                         <span>20km</span>
                       </div>
@@ -478,28 +480,32 @@ export default function ReceiverDashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Food Listings */}
             <div className="space-y-4">
               {listings.length > 0 ? (
                 listings.map((listing) => (
                   <Card
                     key={listing._id}
-                    className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 hover:border-emerald-500/30 transition-colors"
+                    className="bg-card/90 backdrop-blur-sm border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-300 group"
                   >
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-white text-lg">{listing.title}</h3>
-                            {listing.donor.rating && (
-                              <div className="flex items-center gap-1">
-                                <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                                <span className="text-sm text-gray-300">{listing.donor.rating}</span>
-                              </div>
-                            )}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                              <Package className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-card-foreground text-xl">{listing.title}</h3>
+                              {listing.donor.rating && (
+                                <div className="flex items-center gap-1 bg-accent/10 px-2 py-1 rounded-full mt-1">
+                                  <Star className="h-3 w-3 text-accent fill-current" />
+                                  <span className="text-xs font-medium text-accent">{listing.donor.rating}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-emerald-300 text-sm font-medium mb-2">{listing.donor.name}</p>
-                          <div className="flex flex-wrap gap-2 mb-3">
+                          <p className="text-primary text-base font-semibold mb-3">{listing.donor.name}</p>
+                          <div className="flex flex-wrap gap-2 mb-4">
                             {listing.types.map((type) => getFoodTypeBadge(type))}
                             {listing.blockchainId && (
                               <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
@@ -509,37 +515,47 @@ export default function ReceiverDashboardPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-400">{listing.distance.toFixed(1)}km away</p>
+                          <div className="bg-primary/10 px-3 py-2 rounded-full shadow-sm">
+                            <p className="text-sm font-medium text-primary">{listing.distance.toFixed(1)}km away</p>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="grid sm:grid-cols-3 gap-4 mb-4 text-sm text-gray-300">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-emerald-300" />
-                          <span>
+                      <div className="grid sm:grid-cols-3 gap-3 mb-4 text-sm">
+                        <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg border border-border/30">
+                          <Package className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-card-foreground">
                             {listing.quantity} {listing.unit}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-emerald-300" />
-                          <span>Until {new Date(listing.availableUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg border border-border/30">
+                          <Clock className="h-4 w-4 text-accent" />
+                          <span className="font-medium text-card-foreground">
+                            Until{" "}
+                            {new Date(listing.availableUntil).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-emerald-300" />
-                          <span>{listing.interestedUsers || 0} interested</span>
+                        <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg border border-border/30">
+                          <Users className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-card-foreground">
+                            {listing.interestedUsers || 0} interested
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 mb-4 text-sm text-gray-400">
-                        <MapPin className="h-4 w-4" />
-                        <span>{listing.location.address}</span>
+                      <div className="flex items-center gap-2 mb-6 text-muted-foreground bg-muted/30 p-3 rounded-lg">
+                        <MapPin className="h-4 w-4 text-accent" />
+                        <span className="text-sm">{listing.location.address}</span>
                       </div>
 
                       <div className="flex gap-3">
                         <Button
                           onClick={() => handleClaim(listing._id, listing.blockchainId)}
                           disabled={claimingListingId === listing._id}
-                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                          className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 shadow-sm hover:shadow-md transition-all"
                         >
                           {claimingListingId === listing._id ? (
                             <>
@@ -547,25 +563,38 @@ export default function ReceiverDashboardPage() {
                               Claiming...
                             </>
                           ) : (
-                            'Claim Food'
+                            <>
+                              <Heart className="h-4 w-4 mr-2" />
+                              Claim Food
+                            </>
                           )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-border bg-card hover:bg-muted text-card-foreground font-medium h-12 px-6 shadow-sm"
+                          onClick={() => router.push(`/listings/${listing._id}`)}
+                        >
+                          View Details
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
                 ))
               ) : (
-                <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800">
-                  <CardContent className="p-6 text-center">
-                    <Package className="h-10 w-10 mx-auto mb-4 text-gray-500" />
-                    <p className="text-gray-400">No food listings found within {maxDistance}km</p>
+                <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-lg">
+                  <CardContent className="p-8 text-center">
+                    <div className="p-4 bg-muted/30 rounded-full w-fit mx-auto mb-4">
+                      <Package className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-card-foreground">No food found nearby</h3>
+                    <p className="text-muted-foreground mb-6">Try expanding your search radius or clearing filters</p>
                     <Button
                       onClick={() => {
-                        setSearchQuery('')
+                        setSearchQuery("")
                         setVegOnly(false)
                         setMaxDistance(10)
                       }}
-                      className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm"
                     >
                       Clear Filters
                     </Button>
@@ -575,90 +604,99 @@ export default function ReceiverDashboardPage() {
             </div>
           </div>
 
-          {/* Right Column - Notifications & Impact */}
+          {/* Right Column - Impact & Actions */}
           <div className="space-y-6">
-            {/* Impact Profile */}
             {impactStats && (
-              <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800">
+              <Card className="bg-gradient-to-br from-primary/5 via-card/90 to-accent/5 backdrop-blur-sm border-primary/20 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Star className="h-5 w-5 text-emerald-300" />
-                    Impact Profile
+                  <CardTitle className="flex items-center gap-2 text-card-foreground">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Award className="h-5 w-5 text-primary" />
+                    </div>
+                    Your Community Impact
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-100 border border-yellow-500/30 mb-2">
+                <CardContent className="space-y-6">
+                  <div className="text-center p-4 bg-background/50 rounded-xl border border-border/30">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground font-semibold mb-3 shadow-sm">
                       <Star className="h-4 w-4" />
                       {impactStats.rank}
                     </div>
-                    <p className="text-sm text-gray-400">{impactStats.nextRankTokens} tokens to next rank</p>
+                    <p className="text-sm text-muted-foreground">{impactStats.nextRankTokens} tokens to next rank</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <Coins className="h-4 w-4 text-emerald-300" />
-                        <span className="font-bold text-emerald-100">{impactStats.tokensEarned}</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-4 rounded-xl bg-primary/10 border border-primary/20 shadow-sm">
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <Coins className="h-5 w-5 text-primary" />
+                        <span className="font-bold text-xl text-primary">{impactStats.tokensEarned}</span>
                       </div>
-                      <p className="text-xs text-gray-400">Tokens Earned</p>
+                      <p className="text-xs font-medium text-muted-foreground">Tokens Earned</p>
                     </div>
-                    <div className="text-center p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <Package className="h-4 w-4 text-emerald-300" />
-                        <span className="font-bold text-emerald-100">{impactStats.foodClaimed}</span>
+                    <div className="text-center p-4 rounded-xl bg-accent/10 border border-accent/20 shadow-sm">
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <Package className="h-5 w-5 text-accent" />
+                        <span className="font-bold text-xl text-accent">{impactStats.foodClaimed}</span>
                       </div>
-                      <p className="text-xs text-gray-400">Food Claimed</p>
+                      <p className="text-xs font-medium text-muted-foreground">Food Claimed</p>
                     </div>
-                    <div className="text-center p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <Leaf className="h-4 w-4 text-emerald-300" />
-                        <span className="font-bold text-emerald-100">{impactStats.co2Saved}t</span>
+                    <div className="text-center p-4 rounded-xl bg-primary/10 border border-primary/20 shadow-sm">
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <Leaf className="h-5 w-5 text-primary" />
+                        <span className="font-bold text-xl text-primary">{impactStats.co2Saved}t</span>
                       </div>
-                      <p className="text-xs text-gray-400">CO₂ Saved</p>
+                      <p className="text-xs font-medium text-muted-foreground">CO₂ Saved</p>
                     </div>
-                    <div className="text-center p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <Utensils className="h-4 w-4 text-emerald-300" />
-                        <span className="font-bold text-emerald-100">{impactStats.mealsReceived}</span>
+                    <div className="text-center p-4 rounded-xl bg-accent/10 border border-accent/20 shadow-sm">
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <Utensils className="h-5 w-5 text-accent" />
+                        <span className="font-bold text-xl text-accent">{impactStats.mealsReceived}</span>
                       </div>
-                      <p className="text-xs text-gray-400">Meals Received</p>
+                      <p className="text-xs font-medium text-muted-foreground">Meals Received</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Quick Actions */}
-            <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800">
+            <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-white">Quick Actions</CardTitle>
+                <CardTitle className="text-card-foreground flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Quick Actions
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
-                  onClick={handleQrScan}
-                  className="w-full justify-start bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <QrCode className="h-4 w-4 mr-3" />
-                  Scan Pickup QR
-                </Button>
-                <Button
                   variant="outline"
-                  className="w-full justify-start border-emerald-500/40 bg-transparent text-emerald-100"
+                  className="w-full justify-start border-accent/30 bg-card hover:bg-accent/10 text-accent font-medium h-12 shadow-sm"
                   onClick={() => router.push("/dashboard/receiver/notifications")}
                 >
-                  <Bell className="h-4 w-4 mr-3" />
-                  View All Notifications
+                  <Bell className="h-5 w-5 mr-3" />
+                  View Notifications
                 </Button>
                 {!isWalletConnected && (
                   <Button
                     onClick={handleConnectWallet}
-                    className="w-full justify-start bg-yellow-500 hover:bg-yellow-400 text-black"
+                    className="w-full justify-start bg-accent hover:bg-accent/90 text-accent-foreground font-semibold h-12 shadow-sm hover:shadow-md transition-all"
                   >
-                    <Package className="h-4 w-4 mr-3" />
+                    <Package className="h-5 w-5 mr-3" />
                     Connect Wallet
                   </Button>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-accent/5 via-card/90 to-primary/5 backdrop-blur-sm border-accent/20 shadow-lg">
+              <CardContent className="p-6 text-center">
+                <div className="p-3 bg-accent/10 rounded-full w-fit mx-auto mb-4">
+                  <Heart className="h-8 w-8 text-accent" />
+                </div>
+                <h3 className="font-semibold text-card-foreground mb-2">Thank you for making a difference!</h3>
+                <p className="text-sm text-muted-foreground">
+                  You're helping build a more sustainable community by reducing food waste and supporting local
+                  connections.
+                </p>
               </CardContent>
             </Card>
           </div>

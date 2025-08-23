@@ -68,7 +68,7 @@ export default function NotificationsPage() {
       case "new_listing":
         return "bg-emerald-500/20 text-emerald-300"
       case "claim":
-        return "bg-yellow-500/20 text-yellow-300"
+        return "bg-amber-500/20 text-amber-300"
       case "pickup":
         return "bg-blue-500/20 text-blue-300"
       case "completed":
@@ -96,20 +96,20 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Skeleton className="h-10 w-24" />
+      <main className="min-h-screen bg-gradient-to-br from-background via-card/30 to-background text-foreground">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Skeleton className="h-10 w-24 rounded-lg" />
             <div className="flex-1">
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-8 w-48 mb-2 rounded-lg" />
+              <Skeleton className="h-4 w-32 rounded-lg" />
             </div>
           </div>
-          <div className="grid lg:grid-cols-[300px_1fr] gap-6">
-            <Skeleton className="h-96 w-full" />
+          <div className="grid lg:grid-cols-[320px_1fr] gap-8">
+            <Skeleton className="h-96 w-full rounded-xl" />
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full" />
+                <Skeleton key={i} className="h-32 w-full rounded-xl" />
               ))}
             </div>
           </div>
@@ -119,49 +119,52 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-6">
+    <main className="min-h-screen bg-gradient-to-br from-background via-card/30 to-background text-foreground">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-8">
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="border-emerald-500/40 bg-transparent text-emerald-100"
+            className="border-primary/30 bg-card hover:bg-primary/10 text-primary font-medium"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold">Notifications</h1>
-            <p className="text-gray-300 text-sm">
-              {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
+            <h1 className="text-3xl md:text-4xl font-bold">Your Notifications</h1>
+            <p className="text-muted-foreground text-lg">
+              {unreadCount > 0 ? `${unreadCount} new updates waiting for you` : "You're all caught up! 🎉"}
             </p>
           </div>
           {unreadCount > 0 && (
-            <Button onClick={handleMarkAllAsRead} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              Mark all read
+            <Button
+              onClick={handleMarkAllAsRead}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            >
+              Mark All Read
             </Button>
           )}
         </div>
 
-        <div className="grid lg:grid-cols-[300px_1fr] gap-6">
+        <div className="grid lg:grid-cols-[320px_1fr] gap-8">
           {/* Filters Sidebar */}
-          <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 h-fit">
+          <Card className="bg-card/80 backdrop-blur-sm border-border/50 shadow-lg h-fit">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
-                <Filter className="h-5 w-5 text-emerald-300" />
-                Filters
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Filter className="h-5 w-5 text-primary" />
+                Filter Notifications
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">Type</label>
+                <label className="text-sm font-semibold text-foreground mb-3 block">Notification Type</label>
                 <div className="space-y-2">
                   {[
                     { key: "all", label: "All notifications", count: notifications.length },
                     {
                       key: "new_listing",
-                      label: "New listings",
+                      label: "New food available",
                       count: notifications.filter((n) => n.type === "new_listing").length,
                     },
                     {
@@ -171,12 +174,12 @@ export default function NotificationsPage() {
                     },
                     {
                       key: "pickup",
-                      label: "Pickup updates",
+                      label: "Pickup reminders",
                       count: notifications.filter((n) => n.type === "pickup").length,
                     },
                     {
                       key: "completed",
-                      label: "Completed",
+                      label: "Completed pickups",
                       count: notifications.filter((n) => n.type === "completed").length,
                     },
                   ].map((item) => (
@@ -184,26 +187,35 @@ export default function NotificationsPage() {
                       key={item.key}
                       onClick={() => setFilter(item.key as any)}
                       className={cn(
-                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                        "w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between font-medium",
                         filter === item.key
-                          ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/30"
-                          : "text-gray-300 hover:text-gray-100 hover:bg-gray-800/50",
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                       )}
                     >
                       <span>{item.label}</span>
-                      <Badge className="bg-gray-700 text-gray-200 text-xs">{item.count}</Badge>
+                      <Badge
+                        className={cn(
+                          "text-xs font-semibold",
+                          filter === item.key
+                            ? "bg-primary-foreground/20 text-primary-foreground"
+                            : "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {item.count}
+                      </Badge>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t border-gray-800 pt-4">
-                <label className="flex items-center gap-2 text-sm text-gray-300">
+              <div className="border-t border-border/50 pt-4">
+                <label className="flex items-center gap-3 text-sm font-medium text-foreground cursor-pointer">
                   <input
                     type="checkbox"
                     checked={showUnreadOnly}
                     onChange={(e) => setShowUnreadOnly(e.target.checked)}
-                    className="rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500"
+                    className="rounded border-border bg-background text-primary focus:ring-primary/50 w-4 h-4"
                   />
                   Show unread only
                 </label>
@@ -214,11 +226,11 @@ export default function NotificationsPage() {
           {/* Notifications List */}
           <div className="space-y-4">
             {filteredNotifications.length === 0 ? (
-              <Card className="bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800">
-                <CardContent className="p-8 text-center">
-                  <Bell className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-300 mb-2">No notifications found</h3>
-                  <p className="text-gray-500">Try adjusting your filters or check back later.</p>
+              <Card className="bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <Bell className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No notifications found</h3>
+                  <p className="text-muted-foreground">Try adjusting your filters or check back later for updates.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -226,9 +238,9 @@ export default function NotificationsPage() {
                 <Card
                   key={notification._id}
                   className={cn(
-                    "bg-gradient-to-b from-emerald-900/10 to-emerald-700/5 border-gray-800 transition-colors",
-                    notification.urgent && "border-yellow-500/30 bg-yellow-500/5",
-                    !notification.read && "ring-1 ring-emerald-500/20",
+                    "bg-card/80 backdrop-blur-sm border-border/50 hover:shadow-lg transition-all duration-200 cursor-pointer",
+                    notification.urgent && "border-accent/50 bg-accent/5",
+                    !notification.read && "ring-2 ring-primary/20 border-primary/30",
                   )}
                   onClick={() => {
                     markAsRead(notification._id)
@@ -239,37 +251,41 @@ export default function NotificationsPage() {
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className={cn("p-2 rounded-full", getNotificationColor(notification.type))}>
+                      <div className={cn("p-3 rounded-xl", getNotificationColor(notification.type))}>
                         {getNotificationIcon(notification.type)}
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-white">
-                            {notification.type === "new_listing" && "New Food Available"}
-                            {notification.type === "claim" && "Claim Update"}
-                            {notification.type === "pickup" && "Pickup Scheduled"}
-                            {notification.type === "completed" && "Pickup Completed"}
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="font-bold text-foreground text-lg">
+                            {notification.type === "new_listing" && "🍎 New Food Available"}
+                            {notification.type === "claim" && "📋 Claim Update"}
+                            {notification.type === "pickup" && "📍 Pickup Scheduled"}
+                            {notification.type === "completed" && "✅ Pickup Completed"}
                           </h3>
                           <div className="flex items-center gap-2">
                             {notification.urgent && (
-                              <Badge className="bg-red-500/20 text-red-100 border-red-500/30 text-xs">Urgent</Badge>
+                              <Badge className="bg-destructive/10 text-destructive border-destructive/30 text-xs font-semibold">
+                                Urgent
+                              </Badge>
                             )}
-                            {!notification.read && <div className="w-2 h-2 bg-emerald-400 rounded-full" />}
+                            {!notification.read && <div className="w-3 h-3 bg-primary rounded-full" />}
                           </div>
                         </div>
-                        <p className="text-gray-300 mb-3">{notification.message}</p>
+                        <p className="text-muted-foreground mb-4 leading-relaxed">{notification.message}</p>
                         <div className="flex items-center justify-between">
-                          <p className="text-sm text-gray-500">{formatTime(notification.createdAt)}</p>
+                          <p className="text-sm text-muted-foreground font-medium">
+                            {formatTime(notification.createdAt)}
+                          </p>
                           {notification.listingId && (
-                            <Button 
-                              size="sm" 
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            <Button
+                              size="sm"
+                              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 router.push(`/listings/${notification.listingId}`)
                               }}
                             >
-                              View Listing
+                              View Details
                             </Button>
                           )}
                         </div>
