@@ -17,7 +17,6 @@ export default function HeroSection() {
             }}
           ></div>
         </video>
-        <div className="absolute inset-0 bg-green-900/60"></div>
       </div>
 
       <div className="relative z-10 text-center text-white px-4 w-full max-w-6xl mx-auto">
