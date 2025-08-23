@@ -7,13 +7,7 @@ export default function HeroSection() {
     <section className="relative min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Video Background */}
       <div className="absolute inset-0 w-full h-full">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover"
-        >
+        <video autoPlay muted loop playsInline className="w-full h-full object-cover">
           <source src="/food-redistribution-video.mp4" type="video/mp4" />
           {/* Fallback image if video doesn't load */}
           <div
@@ -23,22 +17,21 @@ export default function HeroSection() {
             }}
           ></div>
         </video>
-        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="absolute inset-0 bg-green-900/60"></div>
       </div>
 
       <div className="relative z-10 text-center text-white px-4 w-full max-w-6xl mx-auto">
-        <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-6">
+        <div className="inline-flex items-center gap-2 bg-green-600/80 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-6 border border-green-400/30">
           <Leaf className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="text-xs sm:text-sm">Zero-Waste Campus Initiative</span>
         </div>
-        
-        {/* Wider background box */}
-        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mb-8 w-full max-w-full mx-auto">
+
+        <div className="bg-green-900/50 backdrop-blur-sm rounded-lg p-6 mb-8 w-full max-w-full mx-auto border border-green-400/20">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6">
             WELCOME TO SMART SURPLUS
           </h1>
 
-          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-6 text-blue-200">
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-6 text-green-200">
             Smart Food Redistribution for Zero-Waste Campus
           </h2>
 
@@ -51,7 +44,7 @@ export default function HeroSection() {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
           <Button
             size="lg"
-            className="bg-orange-500 hover:bg-orange-600 rounded-full px-6 sm:px-8 w-full sm:w-auto"
+            className="bg-green-600 hover:bg-green-700 rounded-full px-6 sm:px-8 w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
             asChild
           >
             <Link href="/auth/register?type=donor">List Surplus Food</Link>
@@ -59,7 +52,7 @@ export default function HeroSection() {
           <Button
             size="lg"
             variant="outline"
-            className="border-white text-white hover:bg-white hover:text-gray-900 rounded-full px-6 sm:px-8 bg-transparent w-full sm:w-auto"
+            className="border-white text-white hover:bg-white hover:text-green-800 rounded-full px-6 sm:px-8 bg-transparent w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
             asChild
           >
             <Link href="/auth/register?type=receiver">Find Available Food</Link>

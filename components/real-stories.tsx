@@ -18,12 +18,12 @@ export default function RealImpactStories() {
 
     const scroll = () => {
       if (isPaused) return
-      
+
       scrollPosition += 1
       if (scrollPosition >= scrollWidth - clientWidth) {
         scrollPosition = 0
       }
-      container.scrollTo({ left: scrollPosition, behavior: 'auto' })
+      container.scrollTo({ left: scrollPosition, behavior: "auto" })
     }
 
     const interval = setInterval(scroll, 30)
@@ -50,9 +50,9 @@ export default function RealImpactStories() {
         </div>
 
         <div className="relative">
-          <div 
+          <div
             ref={containerRef}
-            className="h-60 sm:h-72 md:h-80 overflow-hidden rounded-xl sm:rounded-2xl bg-gray-50 shadow-lg"
+            className="h-60 sm:h-72 md:h-80 overflow-hidden rounded-xl sm:rounded-2xl bg-green-50 shadow-lg border-2 border-green-100"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
@@ -127,7 +127,7 @@ export default function RealImpactStories() {
                     className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
                   />
 
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300">
+                  <div className="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/60 transition-all duration-300">
                     <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                       <h3 className="text-white font-semibold text-sm sm:text-lg">{image.title}</h3>
                     </div>
@@ -208,7 +208,7 @@ export default function RealImpactStories() {
                     className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
                   />
 
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300">
+                  <div className="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/60 transition-all duration-300">
                     <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                       <h3 className="text-white font-semibold text-sm sm:text-lg">{image.title}</h3>
                     </div>
@@ -225,7 +225,7 @@ export default function RealImpactStories() {
           </p>
           <Button
             size="lg"
-            className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg"
+            className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
             asChild
           >
             <Link href="/auth/register">Get Started Today</Link>

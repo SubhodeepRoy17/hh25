@@ -8,18 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Leaf,
-  Users,
-  Heart,
-  Sprout,
-  Bell,
-  User,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-} from "lucide-react"
+import { Leaf, Users, Heart, Sprout, Bell, User, Settings, LogOut, Menu, X } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -37,11 +26,11 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <nav className="bg-gray-900 text-white sticky top-0 z-50">
+    <nav className="bg-green-800 text-white sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-md">
               <Leaf className="w-4 h-4 text-white" />
             </div>
             <span className="font-semibold text-sm sm:text-base">SMART SURPLUS</span>
@@ -51,7 +40,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
             <Button
               variant="ghost"
               size="sm"
-              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
             >
               Home
             </Button>
@@ -65,7 +54,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+                    className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
                   >
                     Features
                   </Button>
@@ -109,7 +98,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+                    className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
                   >
                     Programs
                   </Button>
@@ -140,7 +129,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+                    className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
                   >
                     Resources
                   </Button>
@@ -170,21 +159,21 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
             <Button
               variant="ghost"
               size="sm"
-              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
             >
               Pricing
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
             >
               Contact Sales
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
             >
               Help
             </Button>
@@ -196,7 +185,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+                  className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
                 >
                   <Bell className="w-4 h-4 mr-1" />
                   <span className="hidden lg:inline">Notifications</span>
@@ -206,7 +195,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+                      className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
                     >
                       <User className="w-4 h-4 mr-1" />
                       <span className="hidden lg:inline">Profile</span>
@@ -249,7 +238,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
               <Button
                 variant="outline"
                 size="sm"
-                className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20 border-white/30 hover:border-white/50"
+                className="text-white hover:text-green-800 bg-transparent rounded-full transition duration-300 hover:bg-white border-white/50 hover:border-white"
                 asChild
               >
                 <Link href="/auth/login">
@@ -265,7 +254,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
               variant="ghost"
               size="sm"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-white/20"
+              className="text-white hover:text-white bg-transparent rounded-full transition duration-300 hover:bg-green-700"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
@@ -273,38 +262,38 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-700 py-4">
+          <div className="md:hidden border-t border-green-700 py-4">
             <div className="flex flex-col space-y-2">
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Home
               </Button>
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Features
               </Button>
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Programs
               </Button>
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Resources
               </Button>
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Pricing
               </Button>
-              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                 Help
               </Button>
-              <div className="border-t border-gray-700 pt-2 mt-2">
+              <div className="border-t border-green-700 pt-2 mt-2">
                 {isLoggedIn ? (
                   <>
-                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                       <Bell className="w-4 h-4 mr-2" />
                       Notifications
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                       <User className="w-4 h-4 mr-2" />
                       Profile
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-white/20">
+                    <Button variant="ghost" size="sm" className="text-white justify-start hover:bg-green-700">
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </Button>
@@ -326,7 +315,7 @@ export default function Navbar({ isLoggedIn, userType, setIsLoggedIn, setUserTyp
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-white border-white/30 hover:bg-white/20 w-full justify-start bg-transparent"
+                    className="text-white border-white/30 hover:bg-white hover:text-green-800 w-full justify-start bg-transparent"
                     asChild
                   >
                     <Link href="/auth/login">
