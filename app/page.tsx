@@ -6,6 +6,7 @@ import HeroSection from "../components/hero-section"
 import Features from "../components/features"
 import RealImpactStories from "../components/real-stories"
 import Footer from "../components/footer"
+import ContactUsPage from "@/components/contactus"
 import Testimonials from "@/components/testimonials"
 
 export default function Page() {
@@ -19,6 +20,7 @@ export default function Page() {
       <Features />
       <Testimonials />
       <RealImpactStories />
+      <ContactUsPage />
       <Footer />
     </div>
   )
